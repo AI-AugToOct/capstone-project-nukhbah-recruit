@@ -1,0 +1,60 @@
+{
+  "full_stack_developer": [
+    {
+      "role": "system",
+      "content": "You are an HR preparing a coding quiz for a Full Stack Developer candidate."
+    },
+    {
+      "role": "user",
+      "content": "Create a coding-only technical quiz for a Full Stack Developer.\n\nJob Description: {description}\nSector: {sector}\n\nThe quiz should:\n- Focus on one of the following problem types: Authentication Bug, API Endpoint Debugging, Data Validation, Database Query Issue, Frontend–Backend Integration, Session Management, Search/Filtering Feature, Error Handling, Pagination/Performance, or Concurrency/Async Issue.\n- The programming language must be selected based on what is written in the job description.\n\nThe quiz output must follow this flow in natural language (do not label the sections explicitly):\n- Begin with a short welcome greeting that mentions the job position.\n- Provide context to explain the type of real-world problem the candidate will solve.\n- Give clear instructions on what the candidate needs to do.\n- Include a code block with a bug or missing implementation to be fixed or completed.\n- Add helpful notes or clarifications where relevant.\n- End with an encouraging good luck message.\n\nRequirements:\n- The quiz must be purely coding-based (no multiple choice or theory questions).\n- Difficulty should scale with years of experience in the job description (entry = easy, junior = moderate, senior = hard).\n- The quiz must reflect realistic full stack engineering tasks relevant to the given sector."
+    }
+  ],
+
+  
+  "ai_engineering": [
+    {
+      "role": "system",
+      "content": "You are an HR preparing a coding quiz for an AI Engineering candidate."
+    },
+    {
+      "role": "user",
+      "content": "Create a coding-only technical quiz for an AI Engineer.\n\nJob Description: {description}\nSector: {sector}\nDataset: {dataset}\n\nThe quiz should:\n- Be based on the dataset provided in CSV format. You must analyze the data and create context for the problem from it.\n- Focus on one of the following AI problem types: Prediction and Forecasting, Natural Language Processing, Computer Vision, Recommendation Systems, Anomaly and Fraud Detection, Optimization and Decision Making, Generative AI, Voice and Speech Processing, Automation and Intelligent Systems, or Ethics/Safety/Fairness in AI.\n- The programming language must be selected based on what is written in the job description.\n\nThe quiz output must follow this flow in natural language (do not label the sections explicitly):\n- Begin with a short welcome greeting that mentions the job position.\n- Provide context that connects the dataset to a realistic AI problem the candidate will solve.\n- Give clear instructions on what the candidate needs to do with the dataset and model. This may include training a model, debugging existing code, optimizing performance, or completing a missing pipeline.\n- Include a code block with a bug or missing implementation to be fixed or completed.\n- Add helpful notes or clarifications (e.g., assumptions about the dataset, handling missing values, evaluation metrics).\n- End with an encouraging good luck message.\n\nRequirements:\n- The quiz must be purely coding-based (no multiple choice or theory questions).\n- The dataset must be referenced in the problem (e.g., column names, features, target variable).\n- Difficulty should scale with years of experience in the job description (entry = easy, junior = moderate, senior = hard).\n- The quiz must reflect realistic AI engineering tasks relevant to the given sector."
+    }
+  ],
+
+  
+  "cyber_security": [
+    {
+      "role": "system",
+      "content": "You are an HR preparing a coding quiz for a Cybersecurity Engineering candidate."
+    },
+    {
+      "role": "user",
+      "content": "Create a coding-only technical quiz for a Cybersecurity Engineer.\n\nJob Description: {description}\nSector: {sector}\nDataset Preview: {dataset}\n\nThe quiz should:\n- Start with a natural welcome message with the position name.\n- Provide a realistic scenario that reflects cybersecurity challenges based on the dataset and sector. For example, if the dataset shows repeated failed logins, frame it as a brute-force detection problem; if it contains sensitive resources like 'admin_panel' or 'financial_records', mention those in the scenario.\n- Give clear instructions for the candidate to write or fix code (e.g., parse logs, detect suspicious activity, complete missing logic, or secure buggy code).\n- Provide a code block that is incomplete or contains a bug, requiring the candidate to complete or correct it. Inside the code, include simple, realistic examples where appropriate (e.g., a predefined list of sensitive resources).\n- Clarify assumptions about the dataset (like columns or fields) as part of the natural flow, not in a separate labeled section.\n- End with a motivating closing message written naturally, without explicitly labeling it.\n\nRequirements:\n- The quiz must be purely coding-based (no multiple choice or theory).\n- The frameworks or tools mentioned in the job description must guide the quiz (e.g., Splunk, ELK stack, Snort, Suricata). If no framework is mentioned, default to Python.\n- Difficulty should scale with years of experience in the job description (entry = easy, junior = moderate, senior = hard).\n- Do not label the sections explicitly; make the entire output read like a continuous, professional coding challenge."
+    }
+  ],
+
+  
+  "cloud_engineering": [
+    {
+      "role": "system",
+      "content": "You are an HR preparing a coding quiz for a Cloud Engineering candidate."
+    },
+    {
+      "role": "user",
+      "content": "Create a coding-only technical quiz for a Cloud Engineer.\n\nJob Description: {description}\nSector: {sector}\n\nThe quiz should:\n- Begin with a natural welcome message mentioning the position.\n- Provide a realistic cloud engineering scenario derived from the job description and sector. The context should reflect challenges like preventing misconfigurations in cloud services, enforcing strict identity and access controls, or ensuring visibility in dynamic environments.\n- Use the frameworks or languages mentioned in the job description (e.g., AWS CLI, Python with boto3, Terraform, Azure ARM templates, or GCP SDK). If no specific tool is mentioned, default to Python.\n- Give clear instructions for the candidate to fix or complete code related to the described scenario. Examples include correcting a misconfigured IAM policy, enforcing stricter S3 bucket rules, or adding missing logic to infrastructure-as-code.\n- Provide a code block that is either incomplete or contains a bug, requiring the candidate to correct or complete it.\n- Clarify any assumptions about the cloud setup as part of the natural narrative (e.g., assume certain IAM roles, services, or naming conventions).\n- End with an encouraging closing message written naturally, without explicitly labeling it.\n\nRequirements:\n- The quiz must be purely coding-based (no multiple choice or theory).\n- The frameworks/tools mentioned in the job description must guide the quiz. If none are provided, default to Python.\n- Difficulty should scale with years of experience in the job description (entry = easy, junior = moderate, senior = hard).\n- Do not label the sections explicitly; make the entire output read like a continuous, professional coding challenge."
+    }
+  ],
+
+
+  "software_engineering": [
+    {
+      "role": "system",
+      "content": "You are an HR preparing a coding quiz for a Software Engineering candidate."
+    },
+    {
+      "role": "user",
+      "content": "Create a coding-only technical quiz for a Software Engineer.\n\nJob Description: {description}\nSector: {sector}\n\nThe quiz should:\n- Begin with a natural welcome message mentioning the position.\n- Provide a realistic software engineering scenario based on the job description and sector. The scenario should reflect challenges such as designing features, writing and debugging code, maintaining systems, testing, optimizing performance, or preparing software for deployment.\n- Use the language or frameworks mentioned in the job description (e.g., Java, C#, Python, Node.js). If none are specified, default to Python.\n- Give clear instructions for the candidate to implement or fix code that addresses the scenario (e.g., build a function, fix a bug, optimize code, write tests).\n- Provide a code block that is either incomplete or contains a bug, requiring the candidate to complete or correct it.\n- Clarify any assumptions as part of the natural narrative (e.g., expected inputs/outputs, system behavior), not in separate labeled sections.\n- End with an encouraging closing message written naturally, without explicitly labeling it.\n\nRequirements:\n- The quiz must be purely coding-based (no multiple choice or theory).\n- The frameworks/tools mentioned in the job description must guide the quiz. If none are provided, default to Python.\n- Difficulty should scale with years of experience in the job description (entry = easy, junior = moderate, senior = hard).\n- Do not label the sections explicitly; make the entire output read like a continuous, professional coding challenge."
+    }
+  ]
+}
