@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2025-10-01T09:12:34Z",
+    "source_ip": "203.0.113.10",
+    "destination_ip": "10.0.0.5",
+    "protocol": "TCP",
+    "action": "ALLOW",
+    "bytes": 234
+  },
+  {
+    "timestamp": "2025-10-01T09:12:36Z",
+    "source_ip": "203.0.113.10",
+    "destination_ip": "10.0.0.5",
+    "protocol": "TCP",
+    "action": "ALLOW",
+    "bytes": 0
+  },
+  {
+    "timestamp": "2025-10-01T09:12:40Z",
+    "source_ip": "198.51.100.23",
+    "destination_ip": "10.0.0.8",
+    "protocol": "UDP",
+    "action": "DENY",
+    "bytes": 1400
+  }
+]

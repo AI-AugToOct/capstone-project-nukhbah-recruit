@@ -1,0 +1,82 @@
+# Python cache and compiled files 
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dll
+*.a
+*.out
+*.o
+
+# Virtual environments 
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+env*/
+.conda/
+.venv*/
+lib/
+lib64/
+pyvenv.cfg
+pip-wheel-metadata/
+pip-selfcheck.json
+
+# Build and distribution
+build/
+dist/
+develop-eggs/
+downloads/
+.eggs/
+*.egg-info/
+*.egg
+*.dist-info/
+.installed.cfg
+
+# Configuration and local settings 
+.env
+.env.*
+*.ini
+*.cfg
+*.toml
+*.json.lock
+
+# Logs and runtime data 
+*.log
+logs/
+debug.log
+
+# IDE and editor specific 
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# macOS / system files 
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Project-specific ignored paths 
+src/__pycache__/
+infra/__pycache__/
+ai_eng/__pycache__/
+cyber_security/__pycache__/
+
+# Auto-generated notebook checkpoints 
+.ipynb_checkpoints/
+
+# FastAPI / testing 
+__pycache__/
+*.pytest_cache/
+.coverage
+htmlcov/
+pytestdebug.log
