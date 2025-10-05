@@ -1,18 +1,28 @@
 # FastAPI placeholder app for CV + Company input
-# - Pure placeholders (no backend processing)
-# - Simple HTML with minimal CSS/JS inline
-# - English labels as requested, success text exactly: "Resume sent successfuly"
-
-from fastapi import FastAPI, UploadFile, Form, Request
+# UI unchanged; wired to main.py pipeline functions.
+from fastapi import FastAPI, UploadFile, Form, Request, File
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from pathlib import Path
-from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from typing import Optional, List
+import shutil
+import logging
+
+# ---- import your pipeline functions from main.py ----
+# rename to avoid accidental name collisions
+from main import extract_cvs as pipeline_extract_cvs
+from main import main as pipeline_main
 
 app = FastAPI(title="Recruitment MVP")
 
 STATIC_DIR = Path(__file__).parent / "static"
+UPLOADS_DIR = Path(__file__).parent / "uploads"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("app")
 
 # ---------- Shared tiny CSS & JS ----------
 BASE_STYLE = """
@@ -22,11 +32,12 @@ BASE_STYLE = """
   body { margin:0; background:linear-gradient(180deg,#0b1220,#0f172a); color:var(--text); }
   .wrap { max-width: 760px; margin: 48px auto; padding: 0 16px; }
   .card {
-    background: rgba(255, 255, 255, 0.1); /* لون أبيض شفاف */
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 12px; 
     padding: 20px;
-    backdrop-filter: blur(10px); /* هذا يسوي الضبابية */
-    -webkit-backdrop-filter: blur(10px); /* لدعم Safari */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.12);
   }
   h1 { margin: 0 0 8px; font-size: 28px; }
   p.lead { color: var(--muted); margin-top: 0; }
@@ -37,10 +48,7 @@ BASE_STYLE = """
     width:100%; padding:12px 14px; color:var(--text); background:#0b1220; border:1px solid #263043; border-radius:12px; outline:none;
   }
   .logo {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 120px;
+    position: absolute; top: 10px; right: 10px; width: 120px;
   }
   textarea { min-height: 140px; resize: vertical; }
   .btn {
@@ -52,8 +60,6 @@ BASE_STYLE = """
   .choices { display:grid; gap:10px; margin-top:4px; }
   .error { color:#fca5a5; font-size:14px; }
   .success { color:#34d399; font-size:16px; font-weight:700; }
-  .chips { display:flex; gap:8px; flex-wrap:wrap; }
-  .chip { background:#0b1220; border:1px solid #233046; color:#a5b4fc; padding:6px 10px; border-radius:999px; font-size:12px; }
   .spacer { height:8px; }
   .center { text-align:center; }
 </style>
@@ -63,7 +69,6 @@ BASE_STYLE = """
     const boxes = document.querySelectorAll('input[name="role"]');
     boxes.forEach(b => { if(b !== el) b.checked = false; });
 
-    // Toggle CSV upload visibility
     const up = document.getElementById('ai-dataset');
     if (up){
       if (el.checked && el.value === 'AI Engineer') {
@@ -71,12 +76,21 @@ BASE_STYLE = """
       } else {
         up.style.display = 'none';
         const file = document.getElementById('dataset_csv');
-        if (file) file.value = ''; // reset if user switches role
+        if (file) file.value = '';
       }
     }
   }
 </script>
 """
+
+# ---------- Small helper: save UploadFile to disk ----------
+def _save_upload(file: UploadFile, dest_dir: Path) -> Path:
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / file.filename
+    with dest.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+    file.file.close()
+    return dest
 
 # ---------- Pages ----------
 
@@ -126,8 +140,25 @@ def individual_form():
 
 @app.post("/individual/submit", response_class=HTMLResponse)
 async def individual_submit(resume: UploadFile):
-    # Placeholder: ignore file content; just show success message
     filename = resume.filename if resume else "file"
+
+    # 1) save uploaded file
+    try:
+        saved_path = _save_upload(resume, UPLOADS_DIR)
+        logger.info("Saved CV to %s", saved_path)
+    except Exception as e:
+        logger.exception("Failed saving upload")
+        return HTMLResponse(f"<h3>Failed to save file: {e}</h3>", status_code=500)
+
+    # 2) call your CV extractor pipeline (main.extract_cvs)
+    try:
+        _ = pipeline_extract_cvs([str(saved_path)])
+        logger.info("CV extraction invoked successfully")
+    except Exception as e:
+        logger.exception("extract_cvs failed")
+        # still show success UI per your spec, but you can change status if you want.
+        pass
+
     return f"""
     <!doctype html><html><head><meta charset="utf-8"><title>Success</title>{BASE_STYLE}</head><body>
       <img src="/static/nukhbah.png" alt="Nukhbah Logo" class="logo">
@@ -157,7 +188,7 @@ def company_form(error: Optional[str] = None):
           <h1>Company intake</h1>
           <p class="lead">Fill in your company details and role focus.</p>
           {error_html}
-          <form class="grid" action="/company/submit" method="post">
+          <form class="grid" action="/company/submit" method="post" enctype="multipart/form-data">
             <div>
               <label for="company_name">company name</label>
               <input id="company_name" name="company_name" type="text" placeholder="e.g., SDAIA, SITE" required>
@@ -177,14 +208,16 @@ def company_form(error: Optional[str] = None):
               </div>
               <p class="lead" style="margin-top:8px;">(Only one checkbox can be selected.)</p>
             </div>
+
             <!-- AI Engineer dataset (CSV) — hidden by default -->
             <div id="ai-dataset" style="display:none;">
-            <label for="dataset_csv">dataset (CSV) for test generation</label>
-            <input id="dataset_csv" name="dataset_csv" type="file" accept=".csv">
+              <label for="dataset_csv">dataset (CSV) for test generation</label>
+              <input id="dataset_csv" name="dataset_csv" type="file" accept=".csv">
             </div>
+
             <div>
               <label for="job_description">job description</label>
-              <textarea id="job_description" name="job_description" placeholder="Specify the teqnical details of the role, avoid unnessesary details like salary, location, etc." required></textarea>
+              <textarea id="job_description" name="job_description" placeholder="Specify the technical details of the role, avoid unnessesary details like salary, location, etc." required></textarea>
             </div>
             <div class="row">
               <button class="btn" type="submit">OK, Send</button>
@@ -201,17 +234,42 @@ async def company_submit(
     request: Request,
     company_name: str = Form(...),
     sector: str = Form(...),
-    role: Optional[List[str]] = Form(None),  # multiple checkboxes may arrive; we enforce one
-    job_description: str = Form(...)
+    role: Optional[List[str]] = Form(None),
+    job_description: str = Form(...),
+    dataset_csv: UploadFile | None = File(None),
 ):
-    # Server-side guard: enforce exactly one role selected
+    # enforce exactly one role
     selected = role or []
     if len(selected) != 1:
-        # redirect back with error message
         return company_form(error="Please select exactly one role (checkbox).")
-
-    # Placeholder: no persistence. Just echo a success screen
     role_val = selected[0]
+
+    # save CSV only if role == AI Engineer and a file provided
+    dataset_path_str = None
+    if role_val == "AI Engineer" and dataset_csv and dataset_csv.filename:
+        try:
+            saved_ds = _save_upload(dataset_csv, UPLOADS_DIR)
+            dataset_path_str = str(saved_ds)
+            logger.info("Saved dataset CSV to %s", saved_ds)
+        except Exception as e:
+            logger.exception("Failed saving dataset CSV")
+            return HTMLResponse(f"<h3>Failed to save dataset CSV: {e}</h3>", status_code=500)
+
+    # call your main pipeline (no CVs here; this endpoint drives JD-side)
+    try:
+        pipeline_main(
+            job_description=job_description,
+            sector=sector,
+            job_field=role_val,   # pass role as-is; your main() expects a string
+            cv_files=None,        # CVs handled via /individual flow
+            data_path=dataset_path_str
+        )
+        logger.info("Pipeline main() invoked successfully")
+    except Exception as e:
+        logger.exception("pipeline_main failed")
+        # نعرض نجاح شكلي كما في الـMVP، لكن لو تبي ارجع 500 بدلها غيّر التالي:
+        pass
+
     return f"""
     <!doctype html><html><head><meta charset="utf-8"><title>Received</title>{BASE_STYLE}</head><body>
       <img src="/static/nukhbah.png" alt="Nukhbah Logo" class="logo">
@@ -224,6 +282,7 @@ async def company_submit(
             <div><label>sector</label><div>{sector}</div></div>
             <div><label>role</label><div>{role_val}</div></div>
             <div><label>job description</label><div><pre style="white-space:pre-wrap">{job_description}</pre></div></div>
+            {"<div><label>dataset</label><div>"+dataset_csv.filename+"</div></div>" if dataset_path_str else ""}
           </div>
           <div class="spacer"></div>
           <div class="row">
@@ -235,7 +294,7 @@ async def company_submit(
     </body></html>
     """
 
-# ---- Health check (for future deployment probing) ----
+# ---- Health check ----
 @app.get("/healthz")
 def healthz():
     return PlainTextResponse("ok")
