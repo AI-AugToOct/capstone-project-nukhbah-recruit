@@ -1,494 +1,538 @@
-"""
-Resume LLM Pipeline (AR/EN) — Safe PII scrub + NER → LLM semantic filtering
-----------------------------------------------------------------------------
-Exports (import-only, no __main__):
+import os
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
-parse_resume_with_llm(
-    raw_text: str,
-    job_desc: str,
-    llm_backend: "LocalHFBackend|OpenAIBackend",
-    llm_model: str = None,
-    write_outputs: dict | None = None,
-) -> dict
+import gc
+import torch
 
-Returns:
-{
-  "candidate_id": str,
-  "name": str | None,
-  "email": str | None,
-  "comparison_text": str  # PII-scrubbed & JD-relevant; ready for embeddings (done elsewhere)
-}
+gc.collect()
+torch.cuda.empty_cache()
 
-Design:
-1) Deterministic safety pass: NER (XLM-R) + regex to:
-   - remove PII (PERSON/ORG/email/phone/URLs/IDs) and company names,
-   - strip dates/tenures from experience (minimize embedding bias).
-2) LLM pass (English prompts; AR/EN content accepted):
-   - Select only lines relevant to the provided Job Description (JD).
-   - Output strict JSON for kept lines per section.
-3) Assemble final comparison_text from kept lines only; run a final scrub.
-
-Notes:
-- Arabic + English supported.
-- No embeddings here; this file only cleans and prepares text.
-"""
-
-from __future__ import annotations
-import re
+from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+from qwen_vl_utils import process_vision_info
+from pdf2image import convert_from_path
+from PIL import Image
 import json
-import uuid
-import hashlib
-import unicodedata
-from typing import Dict, Any, Optional, List, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional
+from datetime import datetime
+import re
 
-# =================== Normalization & Regex =================== #
 
-def _normalize_text(t: str) -> str:
-    t = unicodedata.normalize("NFKC", t or "")
-    t = re.sub(r"-\n", "", t)             # OCR hyphen line-breaks
-    t = re.sub(r"[\t\r]+", " ", t)
-    t = re.sub(r"\n{3,}", "\n\n", t)
-    t = re.sub(r" {2,}", " ", t)
-    return t.strip()
+class PreciseCVExtractor:
+    def _init_(self, model_name: str = "Qwen/Qwen2-VL-7B-Instruct"):
+        print("=" * 60)
+        print(" Loading Precise CV Extractor")
+        print("=" * 60)
 
-EMAIL_RE   = re.compile(r"\b[\w\.-]+@[\w\.-]+\.[A-Za-z]{2,}\b")
-PHONE_RE   = re.compile(r"\b(?:\+?\d[\d\s\-()]{6,})\b")
-URL_RE     = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)
-ID_HINT_RE = re.compile(r"\b(National ID|هوية|ID)[:\s]*([A-Z0-9\-]+)\b", re.IGNORECASE)
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
 
-# split headers (both AR/EN)
-SEC_HEADERS = {
-    "skills": [r"\bskills?\b", r"\btechnical skills?\b", r"\bالمهارات\b"],
-    "experience": [r"\bexperience\b", r"\bwork\b", r"\bemployment\b", r"\bالخبرات?\b", r"\bالخبرة\b"],
-    "education": [r"\beducation\b", r"\bacademic\b", r"\bالتعليم\b", r"\bالدراسة\b"],
-    "certifications": [r"\bcertifications?\b", r"\blicenses?\b", r"\bالشهادات\b"],
-    "courses": [r"\bcourses?\b", r"\bالدورات\b", r"\bالدورات التدريبية\b"],
-    "projects": [r"\bprojects?\b", r"\bالمشاريع\b"],
-}
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
+            free_memory = torch.cuda.mem_get_info()[0] / 1e9
+            print(f"GPU: {gpu_name} ({gpu_memory:.1f} GB)")
+            print(f"Free Memory: {free_memory:.1f} GB")
 
-# date patterns to prune from experience (reduce bias in embeddings)
-_MONTHS_RE = re.compile(
-    r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|"
-    r"يناير|فبراير|مارس|أبريل|ابريل|مايو|يونيو|يوليو|أغسطس|اغسطس|سبتمبر|أكتوبر|اكتوبر|نوفمبر|ديسمبر)\b",
-    re.IGNORECASE
-)
-_DURATION_RE = re.compile(r"\b(\d+\s*(?:months?|years?|سن(?:ة|وات)))\b", re.IGNORECASE)
-_YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
+        print(f"Loading 7B model...")
 
-def _strip_list_marker(line: str) -> str:
-    # remove leading bullets/dashes: -, •, *, –, —
-    return re.sub(r"^\s*[-•*–—]+\s*", "", line)
+        try:
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_name,
+                torch_dtype=torch.float16,
+                device_map="auto",
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+            )
 
-def _drop_empty_labels(text: str) -> str:
-    # e.g., "Phone: +", "Email:", "LinkedIn:" with no value
-    t = re.sub(r"^(?:phone|email|linkedin)\s*:\s*(?:\+?\s*)?$",
-               " ", text, flags=re.IGNORECASE | re.MULTILINE)
-    return t
+            self.model.eval()
 
-# =================== NER (PERSON/ORG) =================== #
+        except Exception as e:
+            print(f"Error: {e}")
+            raise
 
-_ner_pipe = None
+        self.processor = AutoProcessor.from_pretrained(model_name, trust_remote_code=True)
+        self.model_name = model_name
 
-def _load_ner():
-    """Multilingual NER (XLM-R) for PERSON/ORG, cached singleton."""
-    global _ner_pipe
-    if _ner_pipe is not None:
-        return _ner_pipe
-    from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
-    model_name = "Davlan/xlm-roberta-base-ner-hrl"
-    tok = AutoTokenizer.from_pretrained(model_name)
-    mdl = AutoModelForTokenClassification.from_pretrained(model_name)
-    _ner_pipe = pipeline("ner", model=mdl, tokenizer=tok, aggregation_strategy="simple")
-    return _ner_pipe
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
-def _extract_person_org_spans(text: str, max_chars: int = 8000) -> Tuple[List[Tuple[int,int,str]], List[Tuple[int,int,str]]]:
-    """Run NER; return PERSON & ORG spans as (start, end, word)."""
-    ner = _load_ner()
-    snippet = text[:max_chars]
-    ents = ner(snippet)
-    persons, orgs = [], []
-    for e in ents:
-        if e.get("entity_group") == "PER":
-            persons.append((int(e["start"]), int(e["end"]), e["word"]))
-        elif e.get("entity_group") == "ORG":
-            orgs.append((int(e["start"]), int(e["end"]), e["word"]))
-    return persons, orgs
+        print(f"✓ Model loaded!")
 
-def _primary_name_from_spans(text: str, person_spans: List[Tuple[int,int,str]]) -> Optional[str]:
-    if not person_spans: return None
-    longest = max(person_spans, key=lambda s: s[1]-s[0])
-    return text[longest[0]:longest[1]].strip()
+        self.output_dir = Path("extracted_cvs_precise")
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
-def _build_candidate_id(text: str, email: Optional[str]) -> str:
-    if email:
-        return str(uuid.uuid5(uuid.NAMESPACE_URL, email.lower()))
-    basis = hashlib.sha256((text[:2000]).encode("utf-8", errors="ignore")).hexdigest()
-    return str(uuid.uuid5(uuid.NAMESPACE_URL, basis))
+    def create_strict_extraction_prompt(self) -> str:
+        return """STRICT CV EXTRACTION - EXTRACT ONLY WHAT EXISTS
 
-# =================== PII & structural scrubbing =================== #
+ CRITICAL RULES:
+1. Extract ONLY text that is VISIBLY WRITTEN in the CV
+2. NEVER invent or add dates that don't exist
+3. NEVER add job descriptions - read ALL bullet points completely
+4. If something doesn't exist → use null or []
+5. DO NOT mix technical skills with soft skills
+6. DO NOT include soft skills (leadership, communication, teamwork)
 
-def _split_sections(text: str) -> Dict[str, str]:
-    lines = text.split("\n")
-    cur = "other"
-    out = {k: [] for k in list(SEC_HEADERS.keys()) + ["other"]}
-    for ln in lines:
-        low = ln.lower().strip()
-        switched = False
-        for sec, pats in SEC_HEADERS.items():
-            if any(re.search(p, low) for p in pats):
-                cur = sec
-                switched = True
-                break
-        if not switched:
-            out[cur].append(ln)
-    return {k: "\n".join(v).strip() for k, v in out.items()}
+═══════════════════════════════════════════════════════════
 
-def _remove_dates_from_experience(text: str) -> str:
-    """Drop lines that are clearly dates/tenures/headers; keep action/description sentences."""
-    kept = []
-    for ln in [l for l in text.split("\n") if l.strip()]:
-        stripped = ln.lstrip()
-        had_bullet = bool(re.match(r"^\s*[-•*–—]+\s*", stripped))
-        low = ln.lower()
-        is_datey = _MONTHS_RE.search(low) or _DURATION_RE.search(low) or _YEAR_RE.search(low)
-        # header-ish lines (company — title) drop unless it's a bullet description
-        headerish = ("—" in ln or " - " in ln) and not had_bullet
-        if headerish or (is_datey and not had_bullet):
-            continue
-        kept.append(_strip_list_marker(ln))
-    return "\n".join(kept)
-
-def _scrub_pii_and_org(text: str, email: Optional[str], candidate_id: str) -> str:
-    """Remove emails/phones/urls/IDs and PERSON/ORG via NER; normalize whitespace."""
-    t = text
-    if email: t = EMAIL_RE.sub(" ", t)
-    t = PHONE_RE.sub(" ", t)
-    t = URL_RE.sub(" ", t)
-    t = ID_HINT_RE.sub(" ", t)
-    t = t.replace(candidate_id, " ")
-    # NER-based removal of names/orgs
-    persons, orgs = _extract_person_org_spans(t)
-    def _strip_spans(s: str, spans: List[Tuple[int,int,str]]) -> str:
-        for start, end, _ in sorted(spans, key=lambda x: x[0], reverse=True):
-            s = s[:start] + " " + s[end:]
-        return s
-    t = _strip_spans(t, persons)
-    t = _strip_spans(t, orgs)
-    # bullets to nothing
-    t = "\n".join(_strip_list_marker(l) for l in t.split("\n"))
-    # whitespace cleanup
-    t = re.sub(r"\n{3,}", "\n\n", t)
-    t = re.sub(r" {2,}", " ", t)
-    return t.strip()
-
-# =================== LLM Backends (pluggable) =================== #
-
-class LocalHFBackend:
-    """
-    Local HuggingFace backend (no API keys).
-    model: e.g., "Qwen/Qwen2-7B-Instruct" or "Qwen/Qwen2-1.5B-Instruct" (lighter)
-    """
-    def __init__(self, model: str = "Qwen/Qwen2-1.5B-Instruct", device_map: str = "auto", dtype: str = None):
-        from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-        self.tokenizer = AutoTokenizer.from_pretrained(model)
-        self.model = AutoModelForCausalLM.from_pretrained(model, device_map=device_map, trust_remote_code=True)
-        self.pipe = pipeline(
-            "text-generation",
-            model=self.model,
-            tokenizer=self.tokenizer,
-            do_sample=False,
-            temperature=0.0,
-            max_new_tokens=1024,
-            repetition_penalty=1.05,
-        )
-
-    def generate_json(self, prompt: str) -> dict:
-        out = self.pipe(prompt)[0]["generated_text"]
-        # try to extract the last JSON block
-        json_match = re.search(r"\{[\s\S]*\}\s*$", out.strip())
-        if not json_match:
-            # fallback: search any JSON-like
-            json_match = re.search(r"\{[\s\S]*\}", out)
-        if not json_match:
-            raise ValueError("LLM did not return JSON.")
-        return json.loads(json_match.group(0))
-    
-
-# =================== LLM Prompt (English; AR/EN content) =================== #
-
-_PROMPT_TEMPLATE = """You are a semantic filtering engine. Task: from the provided CV sections,
-KEEP ONLY lines that are relevant to the Job Description (JD). Do NOT invent text.
-Work in AR/EN as needed. Return STRICT JSON matching the schema below and nothing else.
-
-Rules (very important):
-- Use ONLY the content provided in CV sections; do NOT add or rewrite content.
-- For each kept line, it must be directly relevant to JD requirements (skills, tools, methods, domain).
-- Drop purely soft/behavioral lines (teamwork, communication, fast learner, etc.) unless explicitly technical.
-- For Experience: keep only action/description lines (titles/companies/dates are already removed).
-- For Projects: keep a line ONLY if it contains at least two technical terms AND an actionable phrase (built/implemented/optimized/etc.). A numeric metric is preferred but not required.
-- Ignore any personal info; PII is already removed.
-- Keep lines concise; if a line is long, keep only the most informative part (but do NOT rephrase beyond deletion).
-- IMPORTANT: If a section has no relevant lines, return an empty list for that section.
-
-Schema (JSON):
 {
-  "skills":      ["kept line", ...],
-  "experience":  ["kept line", ...],
-  "education":   ["kept line", ...],
-  "certifications": ["kept line", ...],
-  "courses":     ["kept line", ...],
-  "projects":    ["kept line", ...]
+  "personal_info": {
+    "name": "exact full name or null",
+    "job_title": "exact title or null"
+  },
+  "contact_info": {
+    "email": "exact email or null",
+    "phone": "exact phone or null",
+    "location": "exact location or null",
+    "linkedin": "exact URL or null",
+    "github": "exact URL or null"
+  },
+  "education": [
+    {
+      "degree": "exact degree name",
+      "field": "exact major/specialization",
+      "institution": "exact university name",
+      "start_date": "ONLY if written (2018 or Jan 2018) or null",
+      "end_date": "ONLY if written (2022 or Present) or null"
+    }
+  ],
+  "experience": [
+    {
+      "job_title": "exact job title",
+      "company": "exact company name",
+      "location": "exact location or null",
+      "start_date": "ONLY if written or null",
+      "end_date": "ONLY if written or null",
+      "responsibilities": [
+        "Read ALL bullet points COMPLETELY",
+        "Copy EACH bullet point EXACTLY",
+        "Do NOT summarize or shorten",
+        "Include EVERY responsibility listed"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "exact project name",
+      "description": "exact full description",
+      "date": "ONLY if mentioned or null"
+    }
+  ],
+  "technical_skills": [
+    "ONLY from 'Skills' or 'Technical Skills' section",
+    "Do NOT extract from projects/experience",
+    "Do NOT include soft skills",
+    "Flat array, no categories"
+  ],
+  "certifications": [
+    {
+      "name": "exact name",
+      "issuer": "exact issuer or null",
+      "date": "ONLY if written or null"
+    }
+  ],
+  "languages": [
+    {
+      "language": "exact language",
+      "proficiency": "exact level"
+    }
+  ]
 }
 
-Now the inputs:
+═══════════════════════════════════════════════════════════
 
-JD:
-\"\"\"{jd}\"\"\"
+ DATES RULES:
+• No date visible → null
+• Only year → "2020"
+• Month + year → "Jan 2020"
+• NEVER guess dates
+• Use "Present" ONLY if written
 
-CV_SKILLS:
-\"\"\"{skills}\"\"\"
+ SKILLS RULES:
+• Extract ONLY from labeled skills section
+• IGNORE: leadership, communication, teamwork, problem-solving
+• Keep ONLY: Python, Java, AWS, Docker, etc.
+• One skill ONE time (no duplicates)
 
-CV_EXPERIENCE:
-\"\"\"{experience}\"\"\"
+ RESPONSIBILITIES RULES:
+• Read the COMPLETE job description
+• Copy EVERY bullet point EXACTLY
+• Do NOT skip any points
+• Do NOT paraphrase
 
-CV_EDUCATION:
-\"\"\"{education}\"\"\"
+REMEMBER: Extract ONLY what you can SEE. Nothing more."""
 
-CV_CERTIFICATIONS:
-\"\"\"{certs}\"\"\"
+    def pdf_to_images(self, pdf_path: str, dpi: int = 200) -> List[Image.Image]:
+        return convert_from_path(pdf_path, dpi=dpi)
 
-CV_COURSES:
-\"\"\"{courses}\"\"\"
+    def extract_from_image(self, image: Image.Image, page_num: int = 1) -> Dict:
+        try:
+            max_size = 1024
+            if max(image.size) > max_size:
+                ratio = max_size / max(image.size)
+                new_size = tuple(int(dim * ratio) for dim in image.size)
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
 
-CV_PROJECTS:
-\"\"\"{projects}\"\"\"
-Return STRICT JSON only.
-"""
+            messages = [{
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": image},
+                    {"type": "text", "text": self.create_strict_extraction_prompt()}
+                ]
+            }]
 
-# =================== Public API =================== #
+            text = self.processor.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+            image_inputs, video_inputs = process_vision_info(messages)
+            inputs = self.processor(
+                text=[text],
+                images=image_inputs,
+                videos=video_inputs,
+                padding=True,
+                return_tensors="pt"
+            )
+            inputs = inputs.to(self.model.device)
 
-def parse_resume_with_llm(
-    raw_text: str,
-    job_desc: str,
-    llm_backend,
-    llm_model: Optional[str] = None,
-    write_outputs: Optional[Dict[str, str]] = None,
-) -> Dict[str, Any]:
-    """
-    Pipeline:
-      1) Normalize → extract email/name/id → split sections
-      2) Remove dates/tenures from experience
-      3) PII & ORG scrubbing (NER + regex)
-      4) LLM semantic filtering against JD
-      5) Build comparison_text from LLM-kept lines only (all sections)
-    """
-    if not isinstance(raw_text, str):
-        raise TypeError("raw_text must be a string containing CV text")
-    if not isinstance(job_desc, str) or not job_desc.strip():
-        raise ValueError("job_desc must be a non-empty string")
+            with torch.no_grad():
+                generated_ids = self.model.generate(
+                    **inputs,
+                    max_new_tokens=2000,
+                    temperature=0.2,
+                    do_sample=True,
+                    top_p=0.95,
+                    repetition_penalty=1.1
+                )
 
-    # 1) normalize and extract identifiers
-    text = _normalize_text(raw_text)
-    email = EMAIL_RE.search(text)
-    email_val = email.group(0) if email else None
-    persons, orgs = _extract_person_org_spans(text)
-    name = _primary_name_from_spans(text, persons)
-    candidate_id = _build_candidate_id(text, email_val)
+            generated_ids_trimmed = [
+                out_ids[len(in_ids):]
+                for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+            ]
+            output_text = self.processor.batch_decode(
+                generated_ids_trimmed,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False
+            )[0]
 
-    # 2) split sections and pre-clean experience dates
-    secs = _split_sections(text)
-    skills_raw   = secs.get("skills", "")
-    exp_raw      = _remove_dates_from_experience(secs.get("experience", ""))
-    edu_raw      = secs.get("education", "")
-    certs_raw    = secs.get("certifications", "")
-    courses_raw  = secs.get("courses", "")
-    projects_raw = secs.get("projects", "")
+            del inputs, generated_ids, generated_ids_trimmed, image_inputs, video_inputs
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
 
-    # 3) PII/ORG scrub per section (defense-in-depth); remove list markers
-    def _scrub(s: str) -> str:
-        return _scrub_pii_and_org(s, email_val, candidate_id)
+            result = self.parse_and_clean_json(output_text)
+            return result
 
-    skills_s   = _scrub(skills_raw)
-    exp_s      = _scrub(exp_raw)
-    edu_s      = _scrub(edu_raw)
-    certs_s    = _scrub(certs_raw)
-    courses_s  = _scrub(courses_raw)
-    projects_s = _scrub(projects_raw)
+        except Exception as e:
+            print(f"✗ Error: {str(e)[:100]}")
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            return {}
 
-    # 4) LLM semantic filtering
-    prompt = _PROMPT_TEMPLATE.format(
-        jd=_fmt_escape(job_desc.strip()),
-        skills=_fmt_escape(skills_s.strip()),
-        experience=_fmt_escape(exp_s.strip()),
-        education=_fmt_escape(edu_s.strip()),
-        certs=_fmt_escape(certs_s.strip()),
-        courses=_fmt_escape(courses_s.strip()),
-        projects=_fmt_escape(projects_s.strip()),
-    )
+    def parse_and_clean_json(self, output_text: str) -> Dict:
+        try:
+            if "json" in output_text:
+                json_text = output_text.split("json")[1].split("")[0]
+            elif "" in output_text:
+                json_text = output_text.split("")[1].split("")[0]
+            else:
+                json_text = output_text
 
+            json_text = json_text.strip()
 
-    # init backend
-    if isinstance(llm_backend, str):
-        if llm_backend.lower() == "local":
-            backend = LocalHFBackend(model=llm_model or "Qwen/Qwen2-1.5B-Instruct")
+            start_idx = json_text.find("{")
+            end_idx = json_text.rfind("}") + 1
+            if start_idx != -1 and end_idx > start_idx:
+                json_text = json_text[start_idx:end_idx]
+
+            json_text = re.sub(r',\s*}', '}', json_text)
+            json_text = re.sub(r',\s*]', ']', json_text)
+
+            data = json.loads(json_text)
+            data = self.clean_extracted_data(data)
+
+            return data
+
+        except json.JSONDecodeError:
+            return {}
+
+    def clean_extracted_data(self, data: Dict) -> Dict:
+        if not data:
+            return data
+
+        soft_skills = [
+            'leadership', 'communication', 'teamwork', 'problem-solving',
+            'problem solving', 'critical thinking', 'time management',
+            'collaboration', 'adaptability', 'creativity', 'analytical',
+        ]
+
+        if 'technical_skills' in data:
+            if isinstance(data['technical_skills'], list):
+                seen = set()
+                unique_skills = []
+                for skill in data['technical_skills']:
+                    if skill and skill.lower() not in [s.lower() for s in soft_skills]:
+                        if skill.lower() not in seen:
+                            seen.add(skill.lower())
+                            unique_skills.append(skill)
+                data['technical_skills'] = unique_skills
+            elif isinstance(data['technical_skills'], dict):
+                all_skills = []
+                for category, skills in data['technical_skills'].items():
+                    if isinstance(skills, list):
+                        all_skills.extend(skills)
+                seen = set()
+                unique_skills = []
+                for skill in all_skills:
+                    if skill and skill.lower() not in [s.lower() for s in soft_skills]:
+                        if skill.lower() not in seen:
+                            seen.add(skill.lower())
+                            unique_skills.append(skill)
+                data['technical_skills'] = unique_skills
+
+        if 'soft_skills' in data:
+            del data['soft_skills']
+
+        if 'projects' in data and isinstance(data['projects'], list):
+            for project in data['projects']:
+                if isinstance(project, dict):
+                    empty_fields = [k for k, v in project.items() if v is None or v == "" or v == []]
+                    for field in empty_fields:
+                        del project[field]
+
+        if 'education' in data and isinstance(data['education'], list):
+            for edu in data['education']:
+                if isinstance(edu, dict):
+                    empty_fields = [k for k, v in edu.items() if v is None or v == ""]
+                    for field in empty_fields:
+                        del edu[field]
+
+        if 'experience' in data and isinstance(data['experience'], list):
+            for exp in data['experience']:
+                if isinstance(exp, dict):
+                    empty_fields = [
+                        k for k, v in exp.items()
+                        if v is None or v == "" or (isinstance(v, list) and len(v) == 0)
+                    ]
+                    for field in empty_fields:
+                        if field != 'responsibilities':
+                            del exp[field]
+
+                    if 'responsibilities' in exp and isinstance(exp['responsibilities'], list):
+                        exp['responsibilities'] = list(dict.fromkeys(exp['responsibilities']))
+
+        return data
+
+    def merge_pages_carefully(self, pages: List[Dict]) -> Dict:
+        if not pages:
+            return {}
+        if len(pages) == 1:
+            return pages[0]
+
+        merged = pages[0].copy() if pages[0] else {}
+
+        for page in pages[1:]:
+            if not page:
+                continue
+
+            for field in ['personal_info', 'contact_info']:
+                if field in page and isinstance(page[field], dict):
+                    if field not in merged:
+                        merged[field] = {}
+                    for key, value in page[field].items():
+                        if value and (key not in merged[field] or not merged[field][key]):
+                            merged[field][key] = value
+
+            list_fields = ['education', 'experience', 'projects', 'certifications', 'languages']
+            for field in list_fields:
+                if field in page and isinstance(page[field], list):
+                    if field not in merged:
+                        merged[field] = []
+
+                    for item in page[field]:
+                        is_duplicate = False
+
+                        if isinstance(item, dict):
+                            for existing in merged[field]:
+                                if isinstance(existing, dict):
+                                    if field == 'education':
+                                        if (
+                                            item.get('degree') == existing.get('degree') and
+                                            item.get('institution') == existing.get('institution')
+                                        ):
+                                            is_duplicate = True
+                                            break
+                                    elif field == 'experience':
+                                        if (
+                                            item.get('job_title') == existing.get('job_title') and
+                                            item.get('company') == existing.get('company')
+                                        ):
+                                            is_duplicate = True
+                                            break
+                                    elif field == 'projects':
+                                        if item.get('name') == existing.get('name'):
+                                            is_duplicate = True
+                                            break
+                        else:
+                            if item in merged[field]:
+                                is_duplicate = True
+
+                        if not is_duplicate:
+                            merged[field].append(item)
+
+            if 'technical_skills' in page:
+                if 'technical_skills' not in merged:
+                    merged['technical_skills'] = []
+
+                if isinstance(page['technical_skills'], list):
+                    for skill in page['technical_skills']:
+                        if skill and skill not in merged['technical_skills']:
+                            merged['technical_skills'].append(skill)
+
+        merged = self.clean_extracted_data(merged)
+        return merged
+
+    def extract_single_cv(self, pdf_path: Path) -> Dict:
+        try:
+            print(f"\n📄 {pdf_path.name}")
+
+            images = self.pdf_to_images(str(pdf_path))
+            print(f"   Pages: {len(images)}")
+
+            all_page_data = []
+
+            for idx, image in enumerate(images, 1):
+                print(f"   [{idx}/{len(images)}]", end=" ", flush=True)
+
+                page_data = self.extract_from_image(image, page_num=idx)
+
+                if page_data:
+                    all_page_data.append(page_data)
+
+                del image
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+            print("✓")
+
+            if not all_page_data:
+                return {}
+
+            final_data = self.merge_pages_carefully(all_page_data)
+
+            final_data['_metadata'] = {
+                'source_file': pdf_path.name,
+                'total_pages': len(images),
+                'extraction_timestamp': datetime.now().isoformat()
+            }
+
+            json_path = self.output_dir / f"{pdf_path.stem}.json"
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(final_data, f, indent=2, ensure_ascii=False)
+
+            name = final_data.get('personal_info', {}).get('name', 'N/A')
+            skills_count = len(final_data.get('technical_skills', []))
+            print(f"   ✓ {name} | Skills: {skills_count}")
+
+            del all_page_data, images
+            gc.collect()
+
+            return final_data
+
+        except Exception as e:
+            print(f"   ✗ Error: {str(e)[:100]}")
+            return {}
+
+    def extract_batch(self, input_path: str, max_files: Optional[int] = None) -> Dict:
+        path = Path(input_path)
+
+        if not path.exists():
+            raise FileNotFoundError(f"Path not found: {input_path}")
+
+        if path.is_file() and path.suffix.lower() == '.pdf':
+            pdf_files = [path]
+        elif path.is_dir():
+            pdf_files = sorted(list(path.glob("*.pdf")))
+            if max_files:
+                pdf_files = pdf_files[:max_files]
         else:
-            raise ValueError("Unknown llm_backend string. Use 'local' or 'openai'.")
-    else:
-        backend = llm_backend  # assume a compatible object with .generate_json(prompt)
+            raise ValueError(f"Invalid path: must be a PDF file or directory")
 
-    try:
-        llm_json = backend.generate_json(prompt)
-    except Exception as e:
-        raise RuntimeError(f"LLM filtering failed: {e}")
+        if not pdf_files:
+            return {"total": 0, "successful": 0, "failed": 0, "data": []}
 
-    # 5) Build comparison_text only from kept lines (no PII & no bullets)
-    def _pack_list(key: str) -> List[str]:
-        vals = llm_json.get(key, [])
-        if not isinstance(vals, list): return []
-        cleaned = []
-        for v in vals:
-            if isinstance(v, str) and v.strip():
-                cleaned.append(_strip_list_marker(v.strip()))
-        return cleaned
+        print("\n" + "=" * 60)
+        print(" CV EXTRACTION")
+        print("=" * 60)
+        print(f"Files: {len(pdf_files)}")
+        print(f"Output: {self.output_dir.absolute()}")
+        print("=" * 60)
 
+        all_results = []
+        successful = 0
+        failed_files = []
 
-    kept_skills  = _pack_list("skills")
-    kept_exp     = _pack_list("experience")
-    kept_edu     = _pack_list("education")
-    kept_certs   = _pack_list("certifications")
-    kept_courses = _pack_list("courses")
-    kept_proj    = _pack_list("projects")
+        for i, pdf_file in enumerate(pdf_files, 1):
+            print(f"\n[{i}/{len(pdf_files)}]", end=" ")
 
-    comparison_text = "\n\n".join(
-        s for s in [
-            "\n".join(kept_skills) if kept_skills else "",
-            "\n".join(kept_exp) if kept_exp else "",
-            "\n".join(kept_edu) if kept_edu else "",
-            "\n".join(kept_certs) if kept_certs else "",
-            "\n".join(kept_courses) if kept_courses else "",
-            "\n".join(kept_proj) if kept_proj else "",
-        ] if s
-    ).strip()
+            result = self.extract_single_cv(pdf_file)
 
-    # Final safety scrub (no PII; should be already clean, but double-safety)
-    comparison_text = _scrub_pii_and_org(comparison_text, email_val, candidate_id)
+            if result and result.get('personal_info'):
+                all_results.append(result)
+                successful += 1
+            else:
+                failed_files.append(pdf_file.name)
 
-    result = {
-        "candidate_id": candidate_id,
-        "name": name,
-        "email": email_val,
-        "comparison_text": comparison_text,
-    }
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
-    if write_outputs:
-        if path := write_outputs.get("json"):
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(result, f, ensure_ascii=False, indent=2)
-        if path := write_outputs.get("text"):
-            with open(path, "w", encoding="utf-8") as f:
-                f.write(comparison_text)
+        if all_results:
+            combined_json_path = self.output_dir / "all_cvs_combined.json"
+            with open(combined_json_path, 'w', encoding='utf-8') as f:
+                json.dump(all_results, f, indent=2, ensure_ascii=False)
 
-    return result
+        print("\n" + "=" * 60)
+        print(f" SUCCESS: {successful}/{len(pdf_files)}")
+        print(f" FAILED: {len(failed_files)}")
+        print(f" Output: {self.output_dir.absolute()}/")
+        print("=" * 60)
 
+        if failed_files:
+            print(f"\n✗ Failed files:")
+            for file in failed_files[CV_FOLDER = r"C:\\Users\\alsha\\OneDrive\\Documents\\resume"
+                                      
 
-raw_cv   = """Mansor Saud Alshamran
-Curriculum Vitae / سيرة ذاتية
+            MAX_FILES = 5
 
-Personal Information
-Phone: +966 54 144 1537
-Email: m.alshamran.cs@gmail.com
-LinkedIn: https://www.linkedin.com/in/mansor-alshamran-948b1a27a/
+            print("\n" + "=" * 60)
+            print(" Starting Precise CV Extraction")
+            print("=" * 60)
 
-Target Position
-Data Scientist / Data Analyst
+            extractor = PreciseCVExtractor()
 
-Professional Summary
-Highly motivated Data Scientist and Analyst with a strong foundation in computer science,
-machine lear-
-ning and data analysis. Experienced in building predictive models, developing deep learning
-architectures, and analyzing datasets to extract insights. Co-founder with entrepreneurial
-experience in launching online businesses. References available upon request.
+            results = extractor.extract_batch(CV_FOLDER, max_files=MAX_FILES)
 
-Technical Skills
-- Programming: Python, NumPy, Pandas
-- Machine Learning: scikit-learn, Regression, Classification, SVM
-- Deep Learning: TensorFlow, Keras, Neural Networks, PCA
-- Data Analysis & Visualization
-- Problem Solving, Fast Learning, Team Collaboration
+            print("\nProcess completed!")
+            print(f"Check results at: extracted_cvs_precise/")
 
-Work Experience
-Solutions by STC — System Engineer
-Aug 2023 – Nov 2023 (3 months)
-- Supported IT infrastructure and system operations ensuring efficiency and reliability.
+            if results['successful'] > 0:
+                print(f"\nSuccessfully processed {results['successful']} CVs")
+                print("Files created:")
+                print("  - Individual JSON for each CV")
+                print("  - all_cvs_combined.json (all CVs in one file)"):5]:
+                print(f"  - {file}")
 
-Perfect Presentation (2P) — Ministry of Health Call Center
-May 2022 – Sep 2022 (5 months)
-- Provided technical and customer support, ensuring smooth operations at MOH call center.
-
-Co-Founder & CEO — Fabrikent (3D Printing Online Store)
-Founder — Driemor (Health & Beauty Online Store)
-
-Education
-Prince Sattam Bin Abdulaziz University — Bachelor of Computer Science
-GPA: 4.48 / 5 — Second Class Honors
-
-Certifications & Training
-- AI Concepts and Advanced Applications — Samai
-- IBM Machine Learning with Python
-- IBM Introduction to Deep Learning with Keras
-- Tuwaiq Academy — AI Models Bootcamp (In Progress)
-
-Projects
-- Saudi E-commerce Dataset Analysis: Analyzed impact of sales channels on ratings & reviews.
-- Multiple Sclerosis Diagnosis: Built MRI image classifier with PCA achieving 96% accuracy.
-- TikTakToe Bot: Simple X/O bot implementation.
-- Tuwaiq Chatbot: Developed a chatbot to answer academy-related queries.
-- Breast Cancer Classification: Neural network analysis of dataset (Accuracy: 38%).
-- Seattle House Prices: Neural network prediction model (Accuracy: 84%).
-- Study Hours vs Scores: Linear regression achieving 98% accuracy.
-- California Housing Prices: Neural network (73%) & SVM (79%) models.
-"""
-
-job_desc = """Develop and deploy predictive models using machine learning and deep learning frameworks (e.g., TensorFlow, Keras, scikit-learn).
-
-Perform data analysis and visualization to generate insights for decision making.
-
-Work with large datasets to build classification and regression models.
-
-Optimize model performance with techniques such as PCA, SVM, and neural networks.
-
-Support the design of ETL pipelines and ensure data quality.
-
-Collaborate with business stakeholders to translate requirements into data-driven solutions.
-
-Document results and present findings clearly.
-
-Requirements:
-
-Bachelor’s degree in Computer Science, Statistics, or related field.
-
-Strong programming skills in Python, with experience in libraries like NumPy and Pandas.
-
-Hands-on experience with machine learning algorithms (classification, regression, clustering).
-
-Familiarity with deep learning frameworks such as TensorFlow and Keras.
-
-Strong analytical skills with experience in data visualization tools (e.g., Power BI, Matplotlib, Seaborn).
-
-Knowledge of SQL for data extraction and manipulation.
-
-Excellent problem-solving abilities and the ability to work in a fast-paced environment.
-
-Preferred:
-
-Experience with healthcare or e-commerce datasets.
-
-Prior exposure to building and deploying chatbots or recommendation systems.
-
-Certifications in AI or ML (e.g., IBM, Tuwaiq Academy, or similar)."""
-
-backend = LocalHFBackend(model="Qwen/Qwen2-1.5B-Instruct")
-out = parse_resume_with_llm(raw_cv, job_desc, llm_backend=backend)
-
-print(out["candidate_id"], out["name"], out["email"])
-print(out["comparison_text"])
+        return {
+            "total": len(pdf_files),
+            "successful": successful,
+            "failed": len(pdf_files) - successful,
+            "data": all_results,
+            "failed_files": failed_files
+        }
