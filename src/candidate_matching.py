@@ -1,10 +1,8 @@
 # embeddings + cosine similarity 
 
-#pip install sentence-transformers torch 
-
 import json
 from sentence_transformers import SentenceTransformer, util
-from config import SIMILARITY_THRESHOLD, CHUNK_SIZE, OVERLAP
+from config_candidate import SIMILARITY_THRESHOLD, CHUNK_SIZE, OVERLAP
 
 #  Load model once globally 
 model = SentenceTransformer("lwolfrum2/careerbert-jg")
