@@ -21,13 +21,12 @@ def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):
     return chunks
 
 
-def match_candidates(cv_json_path: str,job_description: str,job_field: str,output_path: str = "qualified_candidates.json"):
- 
+def match_candidates(cv_json_path: str, job_description: str, job_field: str, output_path: str = "qualified_candidates.json"):
     # Load CVs
     with open(cv_json_path, "r", encoding="utf-8") as f:
         cvs_data = json.load(f)
 
-    # Load Job dscription and field
+    # Load Job description and field
     if not job_description and not job_field:
         raise ValueError("Job info must contain job_description or job_field")
 
@@ -43,13 +42,14 @@ def match_candidates(cv_json_path: str,job_description: str,job_field: str,outpu
         if not isinstance(cv_data, dict):
             continue
 
-       
         cv_sections = []
 
-        summary = cv_data.get("professional_summary", "")
+        # Summary
+        summary = cv_data.get("summary", "")
         if summary:
             cv_sections.append(summary)
 
+        # Experience
         experience = []
         for exp in cv_data.get("work_experience", []):
             responsibilities = exp.get("responsibilities", [])
@@ -57,56 +57,72 @@ def match_candidates(cv_json_path: str,job_description: str,job_field: str,outpu
                 experience.extend(responsibilities)
         cv_sections.append(" ".join(experience))
 
+        # Technical skills
         skills_list = cv_data.get("technical_skills", [])
         if isinstance(skills_list, list):
             cv_sections.append(" ".join(skills_list))
 
+        # Education
         education_list = []
         for edu in cv_data.get("education", []):
             degree = edu.get("degree", "")
-            field = edu.get("field", "") or edu.get("field_of_study", "")
+            field = edu.get("field", "")
             if degree or field:
                 education_list.append(f"{degree} {field}".strip())
         cv_sections.append(" ".join(education_list))
 
+        # Certifications
         certs_list = [cert.get("name", "") for cert in cv_data.get("certifications", [])]
         cv_sections.append(" ".join(certs_list))
 
+        # Projects
         projects_list = [f"{proj.get('name','')} {proj.get('description','')}" 
                          for proj in cv_data.get("projects", [])]
         cv_sections.append(" ".join(projects_list))
+
+        # Soft skills
+        soft_skills = cv_data.get("soft_skills", [])
+        if isinstance(soft_skills, list):
+            cv_sections.append(" ".join(soft_skills))
+
+        # Languages
+        langs = [f"{lang.get('language','')} {lang.get('proficiency','')}" for lang in cv_data.get("languages", [])]
+        cv_sections.append(" ".join(langs))
+
+        # Interests
+        interests = cv_data.get("interests", [])
+        if isinstance(interests, list):
+            cv_sections.append(" ".join(interests))
 
         cv_text = " ".join([section for section in cv_sections if section.strip()])
         if not cv_text.strip():
             continue
 
-        # Encode CV chunks 
+        # Encode CV chunks
         cv_chunks = chunk_text(cv_text, chunk_size=CHUNK_SIZE, overlap=OVERLAP)
         cv_embeddings = model.encode(cv_chunks, convert_to_tensor=True)
 
-        # cosine similarity 
+        # cosine similarity
         similarity_matrix = util.cos_sim(cv_embeddings, jd_embeddings)
         max_per_cv_chunk = similarity_matrix.max(dim=1).values
         final_similarity = max_per_cv_chunk.mean().item()
 
-        candidate_name = cv_data.get("personal_info", {}).get("name", "Unknown")
+        candidate_name = cv_data.get("name", "Unknown")
 
         if final_similarity >= SIMILARITY_THRESHOLD:
             qualified_candidates.append({
                 "full_name": candidate_name,
-                "email": cv_data.get("contact_info", {}).get("email", ""),
+                "email": cv_data.get("contact", {}).get("email", ""),
                 "similarity_score": round(final_similarity, 3)
             })
 
-    # Sort candidates  
+    # Sort candidates
     qualified_candidates = sorted(qualified_candidates, key=lambda x: x["similarity_score"], reverse=True)
-
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(qualified_candidates, f, ensure_ascii=False, indent=4)
 
     return qualified_candidates
-
 
 # Inputs:
 #        1. cv_json_path: JSON file with CVs (list of candidates).
