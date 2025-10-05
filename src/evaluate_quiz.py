@@ -1,8 +1,8 @@
 
 import json
-from gpt_client import get_gpt_client
-from EvaluationCriteria import EvaluationCriteria
-from evaluation_config import EVALUATION_PROMPT
+from src.infra.gpt_client import get_gpt_client
+from src.evaluation_criteria import EVALUATION_CRITERIA
+from src.evaluation_config import EVALUATION_PROMPT
 
 
 
@@ -16,7 +16,7 @@ def evaluate_answer(question: str, answer: str, role: str):
     Uses a Chain-of-Thought (CoT) reasoning approach internally.
     """
 
-    criteria_obj = EvaluationCriteria(role)
+    criteria_obj = EVALUATION_CRITERIA(role)
     weights = criteria_obj.get_weights()
     descriptions = criteria_obj.get_descriptions()
 

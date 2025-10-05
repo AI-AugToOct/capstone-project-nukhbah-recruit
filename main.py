@@ -2,15 +2,12 @@ from pathlib import Path
 import json
 from config import Config
 from src.cv_extractor import CVExtractor
-from src.cv_extractor import extract_cvs
+# from src.cv_extractor import extract_cvs
 from src.generate_gpt_quiz import gpt_quiz
 from src.job_desc_samples import ai_description, cyber_security_description, software_engineering_description, cloud_engineering_description
 import logging
 from src.candidate_matching import match_candidates
-from src.config_candidate import SIMILARITY_THRESHOLD, CHUNK_SIZE, OVERLAP
-
-from Evaluation_System.evaluate_quiz import evaluate_answer
-from candidate_matching import match_candidates
+from src.evaluate_quiz import evaluate_answer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -21,7 +18,9 @@ def main(job_description: str, sector: str, job_field: str, cv_files: list = Non
 
     # 1: Handling applicant CV
     if cv_files:
-        cv_file = extract_cvs(cv_files)
+        # cv_file = extract_cvs(cv_files)
+        cv_file = CVExtractor.extract_cvs(cv_files)
+
     else:
         cv_file = None
 
@@ -37,7 +36,7 @@ def main(job_description: str, sector: str, job_field: str, cv_files: list = Non
     logger.info("Generating quiz for feild: %s in sector: %s", job_field, sector)
     generated_quiz = gpt_quiz(job_description, sector, job_field, data_path)
     logger.info("Quiz generated successfully.")
-
+    print(generated_quiz)
     # 5: Evaluate applicant answers to the quiz
 
     # 6: Shortlist applicants based on quiz results
@@ -54,6 +53,6 @@ def train_model(X_train, y_train):
     evaluation_report = evaluate_answer(generated_quiz, sample_answer, sector)
     logger.info("Evaluation completed successfully.")
     logger.info("Evaluation Summary:\n%s", evaluation_report)
-
+    print(evaluation_report)
 # 6: Shortlist applicants based on quiz results 
 
