@@ -15,31 +15,35 @@ config = Config('.env')
 
 
 def main(job_description: str, sector: str, job_field: str, cv_files: list = None, data_path: str = None):
+    
+    cvs_data = []
 
-    # 1: Handling applicant CV
+    # 1: Extracting applicant CVs
     if cv_files:
         logger.info("Extracting CVs from files: %s", cv_files)
-        extractor = CVExtractor(config)
-        cv_file = extractor.process_batch(cv_files)
-        logger.info("CVs extracted successfully")
+
+        cv_file_path = extract_cvs(cv_files)
+
+        with open(cv_file_path, 'r', encoding='utf-8') as f:
+            cvs_data = list(json.load(f).values())
+
+        logger.info("CVs extracted successfully: %d candidates", len(cvs_data))
     else:
         logger.warning("No CV files provided, proceeding without CV extraction.")
-        cv_file = None
 
-    # 2: Handling job description
-
-    # 3: Embbidings to get possible applicants for a job description
-    if cv_file:
+    # 2: Matching candidates to job description
+    
+    qualified_candidates = []
+    if cvs_data:
         logger.info("Matching candidates for job field: %s", job_field)
         qualified_candidates = match_candidates(
-            cvs_data=cv_file,
+            cvs_data=cvs_data,
             job_description=job_description,
             job_field=job_field,
             output_path="qualified_candidates.json"
         )
         logger.info("Found %d qualified candidates", len(qualified_candidates))
     else:
-        qualified_candidates = []
         logger.warning("No CVs to match. Skipping candidate matching.")
 
     # 4: Generate quiz for a job description and sector
@@ -65,4 +69,38 @@ def main(job_description: str, sector: str, job_field: str, cv_files: list = Non
     logger.info("Evaluation Summary:\n%s", evaluation_report)
     print(evaluation_report)
 # 6: Shortlist applicants based on quiz results 
+
+
+
+
+
+
+
+
+# عدلت على الكود و هذي النسخة القديمه لو احتجتوها
+#    # 1: Handling applicant CV
+#    if cv_files:
+#        logger.info("Extracting CVs from files: %s", cv_files)
+#        extractor = CVExtractor(config)
+#        cv_file = extractor.process_batch(cv_files)
+#        logger.info("CVs extracted successfully")
+#    else:
+#        logger.warning("No CV files provided, proceeding without CV extraction.")
+#        cv_file = None
+#
+#    # 2: Handling job description
+#
+#    # 3: Embbidings to get possible applicants for a job description
+#    if cv_file:
+#        logger.info("Matching candidates for job field: %s", job_field)
+#        qualified_candidates = match_candidates(
+#            cvs_data=cv_file,
+#            job_description=job_description,
+#            job_field=job_field,
+#            output_path="qualified_candidates.json"
+#        )
+#        logger.info("Found %d qualified candidates", len(qualified_candidates))
+#    else:
+#        qualified_candidates = []
+#        logger.warning("No CVs to match. Skipping candidate matching.")
 
