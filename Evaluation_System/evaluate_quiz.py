@@ -4,7 +4,10 @@ from gpt_client import get_gpt_client
 from EvaluationCriteria import EvaluationCriteria
 from evaluation_config import EVALUATION_PROMPT
 
+
+
 gpt_client = get_gpt_client()
+
 
 
 def evaluate_answer(question: str, answer: str, role: str):
@@ -42,7 +45,7 @@ def evaluate_answer(question: str, answer: str, role: str):
         model="gpt-4o-mini",
         messages=prompt,
         max_tokens=1200,
-        temperature=0.3
+        temperature=0.3 
     )
 
     evaluation_text = response.choices[0].message.content.strip()
@@ -53,6 +56,8 @@ def evaluate_answer(question: str, answer: str, role: str):
         evaluation_json = parse_evaluation_text(evaluation_text)
 
     return evaluation_json
+
+
 
 def parse_evaluation_text(evaluation_text: str):
     """
@@ -104,3 +109,18 @@ def parse_evaluation_text(evaluation_text: str):
 
 
 
+
+if __name__ == "__main__":
+    question = "Write a function to train a simple linear regression model using scikit-learn."
+    answer = """
+from sklearn.linear_model import LinearRegression
+
+def train_model(X_train, y_train):
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    return model
+"""
+    role = "AI Engineer"
+
+    result = evaluate_answer(question, answer, role)
+    print(json.dumps(result, indent=2))
