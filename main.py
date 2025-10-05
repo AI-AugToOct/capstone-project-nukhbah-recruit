@@ -29,10 +29,18 @@ def main(job_description: str, sector: str, job_field: str, cv_files: list = Non
     # 2: Handling job description
 
     # 3: Embbidings to get possible applicants for a job description
-    logger.info("Matching candidates for job field: %s", job_field)
-    qualified_candidates = match_candidates(cv_file, job_description, job_field, "qualified_candidates.json")
-    logger.info("Found %d qualified candidates", len(qualified_candidates))
-    # اسم الملف اللى فيه المترشحين qualified_candidates.json
+    if cv_file:
+        logger.info("Matching candidates for job field: %s", job_field)
+        qualified_candidates = match_candidates(
+            cvs_data=cv_file,
+            job_description=job_description,
+            job_field=job_field,
+            output_path="qualified_candidates.json"
+        )
+        logger.info("Found %d qualified candidates", len(qualified_candidates))
+    else:
+        qualified_candidates = []
+        logger.warning("No CVs to match. Skipping candidate matching.")
 
     # 4: Generate quiz for a job description and sector
     logger.info("Generating quiz for feild: %s in sector: %s", job_field, sector)
