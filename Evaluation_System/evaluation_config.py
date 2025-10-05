@@ -1,9 +1,8 @@
-# ==========================================================
-# evaluation_config.py
-# ----------------------------------------------------------
+
+
 # Centralized prompt templates for the LLM-as-a-Judge system.
 # This file defines the high-level evaluation instructions.
-# ==========================================================
+
 
 EVALUATION_PROMPT = [
     {

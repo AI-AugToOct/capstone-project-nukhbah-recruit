@@ -1,7 +1,4 @@
 
-# Defines role-based evaluation rubrics and groupings
-# for LLM-as-a-Judge scoring.
-
 EVALUATION_CRITERIA = {
     "ai_engineer": {
         "Python Proficiency": {
@@ -144,7 +141,6 @@ EVALUATION_CRITERIA = {
     },
 }
 
-# Criteria groups for analytics / visualization
 CRITERIA_GROUPS = {
     "Logic": [
         "Problem Solving & Reasoning",

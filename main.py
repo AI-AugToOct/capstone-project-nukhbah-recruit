@@ -1,6 +1,7 @@
 from src.generate_gpt_quiz import gpt_quiz
 from src.job_desc_samples import ai_description, cyber_security_description, software_engineering_description, cloud_engineering_description
 import logging
+from Evaluation_System.evaluate_quiz import evaluate_answer
 from candidate_matching import match_candidates
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,6 +24,20 @@ def main(job_description: str, sector: str, job_field: str, data_path: str = Non
     generated_quiz = gpt_quiz(job_description, sector, job_field, data_path)
     logger.info("Quiz generated successfully.")
 # 5: Evaluate applicant answers to the quiz
+
+    sample_answer = """
+from sklearn.linear_model import LinearRegression
+
+def train_model(X_train, y_train):
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    return model
+"""
+
+    logger.info("Evaluating applicant answers for sector: %s", sector)
+    evaluation_report = evaluate_answer(generated_quiz, sample_answer, sector)
+    logger.info("Evaluation completed successfully.")
+    logger.info("Evaluation Summary:\n%s", evaluation_report)
 
 # 6: Shortlist applicants based on quiz results 
 
