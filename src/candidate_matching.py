@@ -21,10 +21,14 @@ def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):
     return chunks
 
 
-def match_candidates(cv_json_path: str, job_description: str, job_field: str, output_path: str = "qualified_candidates.json"):
+def match_candidates(cvs_data, job_description: str, job_field: str, output_path: str = "qualified_candidates.json"):
     # Load CVs
-    with open(cv_json_path, "r", encoding="utf-8") as f:
-        cvs_data = json.load(f)
+    if isinstance(cvs_data, str):
+        with open(cvs_data, "r", encoding="utf-8") as f:
+            cvs_data = json.load(f)
+
+    if not isinstance(cvs_data, list):
+        raise ValueError("cvs_data must be a list of dictionaries")
 
     # Load Job description and field
     if not job_description and not job_field:
