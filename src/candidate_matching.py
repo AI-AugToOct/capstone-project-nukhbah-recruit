@@ -4,13 +4,10 @@
 
 import json
 from sentence_transformers import SentenceTransformer, util
+from config import SIMILARITY_THRESHOLD, CHUNK_SIZE, OVERLAP
 
 #  Load model once globally 
 model = SentenceTransformer("lwolfrum2/careerbert-jg")
-
-SIMILARITY_THRESHOLD = 0.75
-CHUNK_SIZE = 60
-OVERLAP = 20
 
 
 def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):

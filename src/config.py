@@ -14,3 +14,9 @@ GPT_TEMPERATURE = float(config["Settings"]["GPT_TEMPERATURE"])
 
 with open(config["Prompt"]["GPT_PROMPT"], "r") as f:
     GPT_PROMPT = json.load(f)
+    
+   
+ # candidate matching parameters
+SIMILARITY_THRESHOLD = float(config["Settings"]["SIMILARITY_THRESHOLD"])
+CHUNK_SIZE = int(config["Settings"]["CHUNK_SIZE"])
+OVERLAP = int(config["Settings"]["OVERLAP"])

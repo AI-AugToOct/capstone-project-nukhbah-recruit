@@ -10,9 +10,9 @@ from candidate_matching import match_candidates
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+config = Config('.env')
 
 def extract_cvs(cv_files: list) -> str:
-    config = Config('.env')
     extractor = CVExtractor(config)
     
     valid_files = [f for f in cv_files if Path(f).exists()]
