@@ -18,10 +18,12 @@ def main(job_description: str, sector: str, job_field: str, cv_files: list = Non
 
     # 1: Handling applicant CV
     if cv_files:
-        # cv_file = extract_cvs(cv_files)
-        cv_file = CVExtractor.extract_cvs(cv_files)
-
+        logger.info("Extracting CVs from files: %s", cv_files)
+        extractor = CVExtractor(config)
+        cv_file = extractor.process_batch(cv_files)
+        logger.info("CVs extracted successfully")
     else:
+        logger.warning("No CV files provided, proceeding without CV extraction.")
         cv_file = None
 
     # 2: Handling job description
@@ -41,13 +43,13 @@ def main(job_description: str, sector: str, job_field: str, cv_files: list = Non
 
     # 6: Shortlist applicants based on quiz results
     sample_answer = """
-from sklearn.linear_model import LinearRegression
+    from sklearn.linear_model import LinearRegression
 
-def train_model(X_train, y_train):
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    return model
-"""
+    def train_model(X_train, y_train):
+        model = LinearRegression()
+        model.fit(X_train, y_train)
+        return model
+    """
 
     logger.info("Evaluating applicant answers for sector: %s", sector)
     evaluation_report = evaluate_answer(generated_quiz, sample_answer, sector)

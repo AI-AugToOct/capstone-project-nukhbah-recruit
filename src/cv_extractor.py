@@ -424,21 +424,22 @@ Return ONE merged JSON with the same structure."""
     def extract_cvs(cv_files: list) -> str:
         config = config('.env')
         extractor = CVExtractor(config)
-    
+
         valid_files = [f for f in cv_files if Path(f).exists()]
-    
+
         if not valid_files:
             logger.error("No valid CV files found")
-        return None
-        
+            return None
+
         extracted_cvs = extractor.process_batch(valid_files)
         
         cv_data_dict = {cv.get('filename'): cv for cv in extracted_cvs}
-        
+
         output_file = config.output_dir / "all_extracted_cvs.json"
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(cv_data_dict, f, indent=2, ensure_ascii=False)
-        
+
         logger.info(f"Extracted {len(cv_data_dict)} CVs: {output_file}")
-        
+
         return str(output_file)
+
