@@ -1,10 +1,11 @@
 fastapi
 uvicorn
-
+pandas
 openai
 transformers
 torch
 sentencepiece
+sentence-transformers
 
 pdfminer.six
 pytesseract

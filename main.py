@@ -5,8 +5,8 @@ from cv_extractor import CVExtractor
 from src.generate_gpt_quiz import gpt_quiz
 from src.job_desc_samples import ai_description, cyber_security_description, software_engineering_description, cloud_engineering_description
 import logging
-from candidate_matching import match_candidates
-from config_candidate import SIMILARITY_THRESHOLD, CHUNK_SIZE, OVERLAP
+from src.candidate_matching import match_candidates
+from src.config_candidate import SIMILARITY_THRESHOLD, CHUNK_SIZE, OVERLAP
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
