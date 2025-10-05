@@ -14,7 +14,9 @@ from typing import Optional, Dict, List
 from openai import OpenAI
 import time
 import logging
-
+import configparser 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class CVExtractor:
     """
@@ -113,8 +115,7 @@ REMEMBER:
 - Fix OCR errors but keep original information
 - Return only valid JSON"""
     
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
+
     def __init__(self, config):
         """
         Initialize CV Extractor with secure configuration
@@ -417,8 +418,11 @@ Return ONE merged JSON with the same structure."""
         
         return results
     
+    config = configparser.ConfigParser()
+    config.read(".env")
+
     def extract_cvs(cv_files: list) -> str:
-        config = Config('.env')
+        config = config('.env')
         extractor = CVExtractor(config)
     
         valid_files = [f for f in cv_files if Path(f).exists()]
