@@ -8,6 +8,7 @@ from src.job_desc_samples import ai_description, cyber_security_description, sof
 import logging
 from src.candidate_matching import match_candidates
 from src.evaluate_quiz import evaluate_answer
+from src.cv_extractor import extract_cvs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

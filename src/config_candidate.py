@@ -4,6 +4,8 @@ import configparser
 import os
 
 
+current_path = os.getcwd()
+files_and_dirs = os.listdir(os.getcwd())
 # base_dir = os.path.dirname(os.path.abspath(__file__))
 # env_path = os.path.join(base_dir, ".env")
 
@@ -22,7 +24,11 @@ files_and_dirs = os.listdir(os.getcwd())
 
 config = configparser.ConfigParser()
 config.read(".env")
+config.read(".env")
 
+SIMILARITY_THRESHOLD= config["Settings"]["SIMILARITY_THRESHOLD"]
+CHUNK_SIZE = config["Settings"]["CHUNK_SIZE"]
+OVERLAP = config["Settings"]["OVERLAP"]
 SIMILARITY_THRESHOLD= config["Settings"]["SIMILARITY_THRESHOLD"]
 CHUNK_SIZE = config["Settings"]["CHUNK_SIZE"]
 OVERLAP = config["Settings"]["OVERLAP"]
