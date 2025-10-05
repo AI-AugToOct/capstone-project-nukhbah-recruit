@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+
+openai
+transformers
+torch
+sentencepiece
+
+pdfminer.six
+pytesseract
+Pillow
+
+python-dotenv
+pathlib
+requests
+python-multipart
