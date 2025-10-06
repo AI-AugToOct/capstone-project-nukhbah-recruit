@@ -16,13 +16,10 @@ def evaluate_answer(question: str, answer: str, role: str):
     Uses a Chain-of-Thought (CoT) reasoning approach internally.
     """
 
- 
-    criteria_obj = EVALUATION_CRITERIA.get(role, {})
-    weights = criteria_obj.get("weights", {})
-    descriptions = criteria_obj.get("descriptions", {})
+    criteria_obj = EVALUATION_CRITERIA(role)
+    weights = criteria_obj.get_weights()
+    descriptions = criteria_obj.get_descriptions()
 
-    
-    
     criteria_text = "\n".join([
         f"- {name} ({weights[name]*100:.0f}%): {descriptions[name]}"
         for name in weights
