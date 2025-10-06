@@ -156,8 +156,9 @@ async def individual_submit(resume: UploadFile):
 
     # 2) call your CV extractor pipeline (main.extract_cvs)
     try:
-        _ = pipeline_extract_cvs([str(saved_path)])
-        logger.info("CV extraction invoked successfully")
+        cv_json_path = pipeline_extract_cvs([str(saved_path)])
+        logger.info("CV extraction invoked successfully -> %s", cv_json_path)
+        app.state.last_cv_files = [str(saved_path)]
     except Exception as e:
         logger.exception("extract_cvs failed")
         # still show success UI per your spec, but you can change status if you want.
@@ -261,11 +262,12 @@ async def company_submit(
 
     # call your main pipeline (no CVs here; this endpoint drives JD-side)
     try:
+        cv_list = getattr(app.state, "last_cv_files", None)
         pipeline_main(
             job_description=job_description,
             sector=sector,
             job_field=role_val,   # pass role as-is; your main() expects a string
-            cv_files=None,        # CVs handled via /individual flow
+            cv_files=cv_list,        # CVs handled via /individual flow
             data_path=dataset_path_str
         )
         logger.info("Pipeline main() invoked successfully")

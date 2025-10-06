@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 from config import Config
 from src.cv_extractor import CVExtractor
-# from src.cv_extractor import extract_cvs
+from src.cv_extractor import extract_cvs
 from src.generate_gpt_quiz import gpt_quiz
 from src.job_desc_samples import ai_description, cyber_security_description, software_engineering_description, cloud_engineering_description
 import logging
