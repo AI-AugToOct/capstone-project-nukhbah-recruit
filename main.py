@@ -8,7 +8,9 @@ from src.job_desc_samples import ai_description, cyber_security_description, sof
 import logging
 from src.candidate_matching import match_candidates
 from src.evaluate_quiz import evaluate_answer
-from src.cv_extractor import extract_cvs
+# from src.cv_extractor import extract_cvs
+from src.cv_extractor import CVExtractor
+from openai import OpenAI
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -51,23 +53,39 @@ def main(job_description: str, sector: str, job_field: str, cv_file_path: str = 
     generated_quiz = gpt_quiz(job_description, sector, job_field, data_path)
     logger.info("Quiz generated successfully.")
     print(generated_quiz)
-    # 5: Evaluate applicant answers to the quiz
+    # 4: Generate quiz for a job description and sector
+    logger.info("Generating quiz for field: %s in sector: %s", job_field, sector)
+    generated_quiz = gpt_quiz(job_description, sector, job_field, data_path)
+    logger.info("Quiz generated successfully.")
+    print(generated_quiz)
 
-    # 6: Shortlist applicants based on quiz results
     sample_answer = """
     from sklearn.linear_model import LinearRegression
 
     def train_model(X_train, y_train):
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-        return model
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    return model
     """
 
+    # 5: Evaluate applicant answers to the quiz
     logger.info("Evaluating applicant answers for sector: %s", sector)
     evaluation_report = evaluate_answer(generated_quiz, sample_answer, sector)
     logger.info("Evaluation completed successfully.")
     logger.info("Evaluation Summary:\n%s", evaluation_report)
     print(evaluation_report)
+
+    config = Config('.env')
+    client = OpenAI(api_key=config.api_key)
+    def get_gpt_answer(question):
+        response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Solve this question:\n{question}"}]
+    )
+        return response.choices[0].message.content
+
+    
+    
 # 6: Shortlist applicants based on quiz results 
 
 
@@ -104,3 +122,11 @@ def main(job_description: str, sector: str, job_field: str, cv_file_path: str = 
 #        qualified_candidates = []
 #        logger.warning("No CVs to match. Skipping candidate matching.")
 
+
+
+if __name__ == "__main__":
+    main(
+        job_description="Write a function to train a simple linear regression model using scikit-learn.",
+        sector="ssoftware_engineer",
+        job_field="software engineering"
+    )
