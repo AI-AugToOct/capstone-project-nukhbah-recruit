@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 config = Config('.env')
 
 
-def main(job_description: str, sector: str, job_field: str, cv_files: list = None, data_path: str = None):
+def main(job_description: str, sector: str, job_field: str, cv_file_path: str = "src/all_cvs_database.json", data_path: str = None):
     
     cvs_data = []
 
@@ -36,16 +36,15 @@ def main(job_description: str, sector: str, job_field: str, cv_files: list = Non
     
     qualified_candidates = []
     if cvs_data:
-        logger.info("Matching candidates for job field: %s", job_field)
         qualified_candidates = match_candidates(
             cvs_data=cvs_data,
             job_description=job_description,
             job_field=job_field,
             output_path="qualified_candidates.json"
         )
-        logger.info("Found %d qualified candidates", len(qualified_candidates))
+        logger.info("Total qualified candidates: %d", len(qualified_candidates))
     else:
-        logger.warning("No CVs to match. Skipping candidate matching.")
+        logger.warning("No CVs available to match.")
 
     # 4: Generate quiz for a job description and sector
     logger.info("Generating quiz for feild: %s in sector: %s", job_field, sector)
