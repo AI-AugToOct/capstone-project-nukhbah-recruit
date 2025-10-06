@@ -127,6 +127,6 @@ def main(job_description: str, sector: str, job_field: str, cv_file_path: str = 
 if __name__ == "__main__":
     main(
         job_description="Write a function to train a simple linear regression model using scikit-learn.",
-        sector="ssoftware_engineer",
+        sector="software_engineer",
         job_field="software engineering"
     )
