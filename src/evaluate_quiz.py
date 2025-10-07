@@ -1,13 +1,9 @@
-
 import json
 from src.infra.gpt_client import get_gpt_client
-from src.evaluation_criteria import EVALUATION_CRITERIA
+from src.evaluation_criteria import EvaluationCriteria
 from src.evaluation_config import EVALUATION_PROMPT
 
-
-
 gpt_client = get_gpt_client()
-
 
 
 def evaluate_answer(question: str, answer: str, role: str):
@@ -16,15 +12,18 @@ def evaluate_answer(question: str, answer: str, role: str):
     Uses a Chain-of-Thought (CoT) reasoning approach internally.
     """
 
-    criteria_obj = EVALUATION_CRITERIA(role)
+    # استخدام EvaluationCriteria بدل class Criteria
+    criteria_obj = EvaluationCriteria(role)
     weights = criteria_obj.get_weights()
     descriptions = criteria_obj.get_descriptions()
 
+    # إنشاء نص يوضح المعايير مع الوزن والوصف
     criteria_text = "\n".join([
         f"- {name} ({weights[name]*100:.0f}%): {descriptions[name]}"
         for name in weights
     ])
 
+    # إعداد البرومبت للـ GPT
     prompt = [
         {
             "role": "system",
@@ -41,11 +40,12 @@ def evaluate_answer(question: str, answer: str, role: str):
         }
     ]
 
+    # استدعاء GPT لتقييم الإجابة
     response = gpt_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=prompt,
         max_tokens=1200,
-        temperature=0.3 
+        temperature=0.3
     )
 
     evaluation_text = response.choices[0].message.content.strip()
@@ -56,7 +56,6 @@ def evaluate_answer(question: str, answer: str, role: str):
         evaluation_json = parse_evaluation_text(evaluation_text)
 
     return evaluation_json
-
 
 
 def parse_evaluation_text(evaluation_text: str):
@@ -108,8 +107,6 @@ def parse_evaluation_text(evaluation_text: str):
     }
 
 
-
-
 if __name__ == "__main__":
     question = "Write a function to train a simple linear regression model using scikit-learn."
     answer = """
@@ -124,3 +121,4 @@ def train_model(X_train, y_train):
 
     result = evaluate_answer(question, answer, role)
     print(json.dumps(result, indent=2))
+

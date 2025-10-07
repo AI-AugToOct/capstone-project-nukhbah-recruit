@@ -129,14 +129,7 @@ REMEMBER:
         # Initialize OpenAI client with API key from config
         self.client = OpenAI(api_key=config.api_key)
         
-        # Setup output directories from config
-        self.raw_dir = config.output_dir / "raw_text"
-        self.json_dir = config.output_dir / "structured_json"
-        
-        # Create directories if they don't exist
-        for directory in [self.raw_dir, self.json_dir, config.upload_dir]:
-            directory.mkdir(parents=True, exist_ok=True)
-        
+
         print(f"CVExtractor initialized successfully")
         print(f"Model: {config.model}")
         print(f"Output directory: {config.output_dir.absolute()}")
@@ -335,18 +328,6 @@ Return ONE merged JSON with the same structure."""
         final_data['extraction_method'] = f'OpenAI Vision ({self.config.model})'
         final_data['total_pages'] = len(images)
         
-        # Step 5: Save raw text for reference
-        raw_text = self._generate_raw_text(final_data)
-        raw_file = self.raw_dir / f"{pdf_path.stem}_raw.txt"
-        with open(raw_file, 'w', encoding='utf-8') as f:
-            f.write(raw_text)
-        print(f"\nRaw text saved: {raw_file.name}")
-        
-        # Step 6: Save structured JSON
-        json_file = self.json_dir / f"{pdf_path.stem}.json"
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(final_data, f, indent=2, ensure_ascii=False)
-        print(f"JSON saved: {json_file.name}")
         
         # Display summary
         print("\n" + "=" * 60)
@@ -422,7 +403,11 @@ Return ONE merged JSON with the same structure."""
     config = configparser.ConfigParser()
     config.read(".env")
 
-def extract_cvs(cv_files: list) -> str:
+def extract_cvs(cv_files: list) -> Dict:
+    """
+    Process CV files and merge with existing all_extracted_cvs.json
+    Returns dict of all CVs (existing + new)
+    """
     config = Config('.env')
     extractor = CVExtractor(config)
 
@@ -430,17 +415,41 @@ def extract_cvs(cv_files: list) -> str:
 
     if not valid_files:
         logger.error("No valid CV files found")
-        return None
+        return {}
 
+    # Extract new CVs
     extracted_cvs = extractor.process_batch(valid_files)
+    new_cvs_dict = {cv.get('filename'): cv for cv in extracted_cvs}
+
+    # Load existing CVs if any
+    all_cvs_file = config.output_dir / "all_extracted_cvs.json"
+    if all_cvs_file.exists():
+        with open(all_cvs_file, 'r', encoding='utf-8') as f:
+            all_cvs = json.load(f)
+    else:
+        all_cvs = {}
+
+    # Merge new CVs
+    all_cvs.update(new_cvs_dict)
+
+    # Save merged CVs
+    with open(all_cvs_file, 'w', encoding='utf-8') as f:
+        json.dump(all_cvs, f, indent=2, ensure_ascii=False)
+
+    logger.info(f"Total CVs after merge: {len(all_cvs)}")
     
-    cv_data_dict = {cv.get('filename'): cv for cv in extracted_cvs}
+    return all_cvs
 
-    output_file = config.output_dir / "all_extracted_cvs.json"
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(cv_data_dict, f, indent=2, ensure_ascii=False)
 
-    logger.info(f"Extracted {len(cv_data_dict)} CVs: {output_file}")
 
-    return str(output_file)
+
+
+
+
+
+
+
+
+
+
 

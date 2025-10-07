@@ -1,0 +1,33 @@
+Name: ALJUHARAH ALMOUSA
+
+Contact Information:
+  email: aljwharah.a20@gmail.com
+  phone: (966) 532191990
+  linkedin: LinkedIn
+  github: GitHub
+  location: Riyadh
+  website: None
+
+Summary: I am a recent Data Science graduate seeking a training opportunity to develop my skills in data analysis, programming, and database management. Motivated to contribute to solving real-world problems in a supportive work environment
+
+Technical Skills (20):
+  - Python
+  - R
+  - SQL
+  - Java
+  - Classification
+  - Clustering
+  - NLP
+  - Deep Learning
+  - Time Series
+  - EDA
+  - Predictive Modeling
+  - Business Analysis
+  - Power BI
+  - Tableau
+  - TensorFlow
+  - Keras
+  - PyTorch
+  - Matplotlib
+  - Web Design
+  - Microsoft App

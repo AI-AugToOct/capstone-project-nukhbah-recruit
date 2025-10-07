@@ -9,15 +9,15 @@ gpt_client = get_gpt_client()
 def gpt_quiz(job_description: str, sector: str, job_field: str, data_path: str = None):
     formatted_prompt = None
 
-    if job_field == "full stack developer":
+    if job_field == "Fullstack Developer":
         formatted_prompt = copy.deepcopy(GPT_PROMPT["full_stack_developer"])
-    elif job_field == "ai engineering":
+    elif job_field == "AI Engineer":
         formatted_prompt = copy.deepcopy(GPT_PROMPT["ai_engineering"])
-    elif job_field == "cyber security":
+    elif job_field == "Cyber Security":
         formatted_prompt = copy.deepcopy(GPT_PROMPT["cyber_security"])
-    elif job_field == "cloud engineering":
+    elif job_field == "Cloud Engineer":
         formatted_prompt = copy.deepcopy(GPT_PROMPT["cloud_engineering"])
-    elif job_field == "software engineering":
+    elif job_field == "Software Engineer":
         formatted_prompt = copy.deepcopy(GPT_PROMPT["software_engineering"])
     else:
         raise ValueError(f"Unsupported job field: {job_field}")

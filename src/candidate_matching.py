@@ -76,8 +76,12 @@ def match_candidates(cvs_data, job_description: str, job_field: str, output_path
         cv_sections.append(" ".join(education_list))
 
         # Certifications
-        certs_list = [cert.get("name", "") for cert in cv_data.get("certifications", [])]
-        cv_sections.append(" ".join(certs_list))
+        certs_list = []
+        for cert in cv_data.get("certifications", []):
+            if isinstance(cert, dict):
+                certs_list.append(cert.get("name", ""))
+            elif isinstance(cert, str):
+                certs_list.append(cert)
 
         # Projects
         projects_list = [f"{proj.get('name','')} {proj.get('description','')}" 
@@ -117,6 +121,7 @@ def match_candidates(cvs_data, job_description: str, job_field: str, output_path
             qualified_candidates.append({
                 "full_name": candidate_name,
                 "email": cv_data.get("contact", {}).get("email", ""),
+                "phone": cv_data.get("contact", {}).get("phone", ""),
                 "similarity_score": round(final_similarity, 3)
             })
 

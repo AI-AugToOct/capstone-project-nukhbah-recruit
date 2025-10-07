@@ -1,74 +1,580 @@
 {
-  "Resume CV.pdf": {
-    "name": "Eleanor Fitzgerald",
+  "ahmed_alghamdi_cv.pdf": {
+    "name": "AHMED ALGHAMDI",
     "contact": {
-      "email": "hello@reallygreatsite.com",
-      "phone": "+123-456-7890",
-      "linkedin": null,
-      "github": null,
-      "location": "123 Anywhere St., Any City",
+      "email": "sarahalo4359@gmail.com",
+      "phone": "(966) 512345678",
+      "linkedin": "linkedin.com/in/ahmedghamdi",
+      "github": "github.com/ahmedghamdi",
+      "location": "Riyadh",
       "website": null
     },
-    "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent molestie orci ac nulla dapibus, eget suscipit felis porta. Suspendisse fringilla et libero nec commodo. In hac habitasse platea dictumst. Ut dictum faucibus urna id varius. Fusce ac felis ut diam elementum bibendum ac eu arcu. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.",
+    "summary": "Passionate software engineer with strong skills in backend and frontend development, seeking to contribute to innovative web and mobile applications.",
     "technical_skills": [
-      "Operating Software",
-      "Structured Query Language (SQL)",
-      "Statistics",
-      "Good communication skill",
-      "Able to work in a team",
-      "Great problem solving skill"
+      "Python",
+      "Java",
+      "JavaScript",
+      "React",
+      "Node.js",
+      "SQL",
+      "NoSQL",
+      "Docker",
+      "REST APIs",
+      "Git",
+      "Agile Development"
     ],
     "work_experience": [
       {
-        "title": "Senior Data Analyst",
-        "company": "Ingoude Company",
-        "location": "Any City",
-        "start_date": "January 2018",
-        "end_date": "present",
-        "duration": null,
-        "responsibilities": [
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-          "Praesent molestie orci ac nulla dapibus, eget suscipit felis porta.",
-          "Suspendisse fringilla et libero nec commodo. In hac habitasse platea dictumst."
-        ],
-        "technologies": [],
-        "achievements": null
-      },
-      {
-        "title": "Junior Data Analyst",
-        "company": "Thynk Unlimited",
-        "location": "Any City",
-        "start_date": "January 2016",
-        "end_date": "January 2018",
-        "duration": null,
-        "responsibilities": [
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-          "Praesent molestie orci ac nulla dapibus, eget suscipit felis porta.",
-          "Suspendisse fringilla et libero nec commodo. In hac habitasse platea dictumst."
-        ],
-        "technologies": [],
-        "achievements": null
+        "position": "Intern",
+        "company": "Tech Solutions",
+        "duration": "6 months",
+        "description": "Worked on developing RESTful APIs and integrating frontend with backend services."
       }
     ],
     "education": [
       {
-        "degree": "Bachelor of Statistics",
-        "field": null,
-        "institution": "Arrowai University",
-        "location": null,
-        "graduation_year": "2015",
-        "gpa": "3.9",
-        "honors": null
+        "degree": "BACHELOR OF COMPUTER SCIENCE",
+        "field": "Software Engineering",
+        "institution": "King Saud University",
+        "graduation_year": "2024",
+        "gpa": "3.6",
+        "honors": "Excellent"
+      }
+    ],
+    "projects": [
+      {
+        "name": "E-COMMERCE WEBSITE",
+        "description": "Developed a full-stack e-commerce platform using React and Node.js.",
+        "technologies": [
+          "React",
+          "Node.js",
+          "MongoDB"
+        ],
+        "role": "Developer",
+        "link": null
+      }
+    ],
+    "certifications": [
+      "AWS Certified Developer"
+    ],
+    "languages": [
+      {
+        "language": "Arabic"
+      },
+      {
+        "language": "English"
+      }
+    ],
+    "years_experience": 1,
+    "soft_skills": [
+      "Teamwork",
+      "Problem solving",
+      "Adaptability",
+      "Time management"
+    ],
+    "interests": [
+      "Web Development",
+      "Open Source"
+    ]
+  },
+  "noura_alotaibi_cv.pdf": {
+    "name": "NOURA ALOTAIBI",
+    "contact": {
+      "email": "noura.alotaibi@gmail.com",
+      "phone": "(966) 598765432",
+      "linkedin": "linkedin.com/in/nouraotaibi",
+      "github": null,
+      "location": "Jeddah",
+      "website": null
+    },
+    "summary": "Data analyst skilled in statistical analysis and business intelligence, aiming to provide actionable insights for organizations.",
+    "technical_skills": [
+      "Python",
+      "R",
+      "SQL",
+      "Excel",
+      "Power BI",
+      "Tableau",
+      "EDA",
+      "Predictive Modeling",
+      "Data Cleaning",
+      "Visualization"
+    ],
+    "work_experience": [
+      {
+        "position": "Data Analyst Intern",
+        "company": "Finance Corp",
+        "duration": "4 months",
+        "description": "Prepared dashboards and reports for financial performance tracking."
+      }
+    ],
+    "education": [
+      {
+        "degree": "BACHELOR OF STATISTICS",
+        "field": "Data Analysis",
+        "institution": "King Abdulaziz University",
+        "graduation_year": "2023",
+        "gpa": "3.8",
+        "honors": "Excellent"
+      }
+    ],
+    "projects": [
+      {
+        "name": "CUSTOMER SEGMENTATION",
+        "description": "Applied clustering techniques to segment customers based on purchase behavior.",
+        "technologies": [
+          "Python",
+          "Scikit-learn"
+        ],
+        "role": "Team Lead",
+        "link": null
+      }
+    ],
+    "certifications": [
+      "Google Data Analytics Certificate"
+    ],
+    "languages": [
+      {
+        "language": "Arabic"
+      },
+      {
+        "language": "English"
+      }
+    ],
+    "years_experience": 1,
+    "soft_skills": [
+      "Analytical thinking",
+      "Communication",
+      "Teamwork"
+    ],
+    "interests": [
+      "Data Visualization",
+      "Market Analysis"
+    ]
+  },
+  "saeed_alshahrani_cv.pdf": {
+    "name": "SAEED ALSHAHRANI",
+    "contact": {
+      "email": "saeed.shahrani@gmail.com",
+      "phone": "(966) 511223344",
+      "linkedin": "linkedin.com/in/saeedshahrani",
+      "github": null,
+      "location": "Riyadh",
+      "website": null
+    },
+    "summary": "Cybersecurity specialist focused on network security and threat analysis, eager to secure organizational assets.",
+    "technical_skills": [
+      "Python",
+      "Network Security",
+      "Firewalls",
+      "Penetration Testing",
+      "Wireshark",
+      "Kali Linux",
+      "SIEM",
+      "Vulnerability Assessment"
+    ],
+    "work_experience": [],
+    "education": [
+      {
+        "degree": "BACHELOR OF COMPUTER SCIENCE",
+        "field": "Cybersecurity",
+        "institution": "Prince Sultan University",
+        "graduation_year": "2024"
+      }
+    ],
+    "projects": [
+      {
+        "name": "NETWORK VULNERABILITY ASSESSMENT",
+        "description": "Scanned and reported vulnerabilities in simulated network environments.",
+        "technologies": [
+          "Kali Linux",
+          "Nmap"
+        ],
+        "role": "Project Lead",
+        "link": null
+      }
+    ],
+    "certifications": [
+      "CompTIA Security+"
+    ],
+    "languages": [
+      {
+        "language": "Arabic"
+      },
+      {
+        "language": "English"
+      }
+    ],
+    "years_experience": 0,
+    "soft_skills": [
+      "Problem solving",
+      "Attention to detail",
+      "Teamwork"
+    ],
+    "interests": [
+      "Cyber Threat Intelligence",
+      "Ethical Hacking"
+    ]
+  },
+  "fatimah_alzahrani_cv.pdf": {
+    "name": "FATIMAH ALZAHRANI",
+    "contact": {
+      "email": "sarol4359@gmail.com",
+      "phone": "(966) 534567890",
+      "linkedin": "linkedin.com/in/fatimahzahrani",
+      "github": null,
+      "location": "Dammam",
+      "website": null
+    },
+    "summary": "Cloud engineer experienced in deploying scalable applications on AWS and Azure, with knowledge of DevOps practices.",
+    "technical_skills": [
+      "AWS",
+      "Azure",
+      "Docker",
+      "Kubernetes",
+      "Terraform",
+      "CI/CD",
+      "Python",
+      "Linux"
+    ],
+    "work_experience": [
+      {
+        "position": "Cloud Intern",
+        "company": "Cloud Solutions",
+        "duration": "5 months",
+        "description": "Assisted in deploying containerized applications and automating cloud workflows."
+      }
+    ],
+    "education": [
+      {
+        "degree": "BACHELOR OF COMPUTER ENGINEERING",
+        "field": "Cloud Computing",
+        "institution": "King Fahd University",
+        "graduation_year": "2024"
+      }
+    ],
+    "projects": [
+      {
+        "name": "CONTAINERIZED WEB APP",
+        "description": "Deployed a web application using Docker and Kubernetes on AWS.",
+        "technologies": [
+          "Docker",
+          "Kubernetes",
+          "AWS"
+        ],
+        "role": "Developer",
+        "link": null
+      }
+    ],
+    "certifications": [
+      "AWS Certified Solutions Architect"
+    ],
+    "languages": [
+      {
+        "language": "Arabic"
+      },
+      {
+        "language": "English"
+      }
+    ],
+    "years_experience": 1,
+    "soft_skills": [
+      "Problem solving",
+      "Teamwork",
+      "Adaptability"
+    ],
+    "interests": [
+      "Cloud Automation",
+      "Serverless Architecture"
+    ]
+  },
+  "layla_alharthi_cv.pdf": {
+    "name": "LAYLA ALHARTHI",
+    "contact": {
+      "email": "layla.harthi@gmail.com",
+      "phone": "(966) 598112233",
+      "linkedin": "linkedin.com/in/laylaharthi",
+      "github": "github.com/laylaharthi",
+      "location": "Riyadh",
+      "website": null
+    },
+    "summary": "Machine learning engineer with experience in NLP, predictive modeling, and deep learning frameworks, seeking innovative projects.",
+    "technical_skills": [
+      "Python",
+      "TensorFlow",
+      "Keras",
+      "PyTorch",
+      "NLP",
+      "Computer Vision",
+      "Scikit-learn",
+      "SQL",
+      "EDA"
+    ],
+    "work_experience": [],
+    "education": [
+      {
+        "degree": "BACHELOR OF AI",
+        "field": "Machine Learning",
+        "institution": "Saudi Electronic University",
+        "graduation_year": "2025"
+      }
+    ],
+    "projects": [
+      {
+        "name": "NLP TEXT CLASSIFICATION",
+        "description": "Built a text classification model using deep learning techniques for sentiment analysis.",
+        "technologies": [
+          "Python",
+          "PyTorch",
+          "NLP"
+        ],
+        "role": "Lead Developer",
+        "link": null
+      }
+    ],
+    "certifications": [
+      "Deep Learning Specialization - Coursera"
+    ],
+    "languages": [
+      {
+        "language": "Arabic"
+      },
+      {
+        "language": "English"
+      }
+    ],
+    "years_experience": 0,
+    "soft_skills": [
+      "Analytical thinking",
+      "Problem solving",
+      "Teamwork"
+    ],
+    "interests": [
+      "NLP",
+      "AI Research"
+    ]
+  },
+  "mohammed_alqahtani_cv.pdf": {
+    "name": "MOHAMMED ALQAHTANI",
+    "contact": {
+      "email": "mohammed.qahtani@gmail.com",
+      "phone": "(966) 512334455",
+      "linkedin": "linkedin.com/in/mohammedqahtani",
+      "github": null,
+      "location": "Riyadh",
+      "website": null
+    },
+    "summary": "Accountant with experience in financial reporting, auditing, and budgeting seeking to optimize company finances.",
+    "technical_skills": [
+      "Excel",
+      "SAP",
+      "Financial Reporting",
+      "Budgeting",
+      "Auditing"
+    ],
+    "work_experience": [
+      {
+        "position": "Accountant",
+        "company": "Finance Co.",
+        "duration": "2 years",
+        "description": "Managed financial statements and performed audits for internal processes."
+      }
+    ],
+    "education": [
+      {
+        "degree": "BACHELOR OF ACCOUNTING",
+        "field": "Finance",
+        "institution": "King Saud University",
+        "graduation_year": "2022"
       }
     ],
     "projects": [],
+    "certifications": [
+      "CPA"
+    ],
+    "languages": [
+      {
+        "language": "Arabic"
+      },
+      {
+        "language": "English"
+      }
+    ],
+    "years_experience": 2,
+    "soft_skills": [
+      "Attention to detail",
+      "Problem solving",
+      "Teamwork"
+    ],
+    "interests": [
+      "Finance Analysis",
+      "Investments"
+    ]
+  },
+  "reem_alotaibi_cv.pdf": {
+    "name": "REEM ALOTAIBI",
+    "contact": {
+      "email": "reem.alotaibi@gmail.com",
+      "phone": "(966) 599887766",
+      "linkedin": "linkedin.com/in/reemalotaibi",
+      "github": null,
+      "location": "Jeddah",
+      "website": null
+    },
+    "summary": "Creative graphic designer with expertise in digital and print media, seeking to create visually appealing designs for clients.",
+    "technical_skills": [
+      "Adobe Photoshop",
+      "Adobe Illustrator",
+      "Figma",
+      "Branding",
+      "Typography",
+      "UI/UX Design"
+    ],
+    "work_experience": [
+      {
+        "position": "Freelance Designer",
+        "company": "Self-employed",
+        "duration": "3 years",
+        "description": "Designed branding materials, social media content, and websites for multiple clients."
+      }
+    ],
+    "education": [
+      {
+        "degree": "BACHELOR OF FINE ARTS",
+        "field": "Graphic Design",
+        "institution": "King Abdulaziz University",
+        "graduation_year": "2021"
+      }
+    ],
+    "projects": [],
+    "certifications": [
+      "Adobe Certified Expert"
+    ],
+    "languages": [
+      {
+        "language": "Arabic"
+      },
+      {
+        "language": "English"
+      }
+    ],
+    "years_experience": 3,
+    "soft_skills": [
+      "Creativity",
+      "Teamwork",
+      "Time management",
+      "Communication"
+    ],
+    "interests": [
+      "Digital Art",
+      "Branding"
+    ]
+  },
+  "Aljwharah Almousa cv RUH(4).pdf": {
+    "name": "ALJUHARAH ALMOUSA",
+    "contact": {
+      "email": "aljwharah.a20@gmail.com",
+      "phone": "(966) 532191990",
+      "linkedin": "LinkedIn",
+      "github": "GitHub",
+      "location": "Riyadh",
+      "website": null
+    },
+    "summary": "I am a recent Data Science graduate seeking a training opportunity to develop my skills in data analysis, programming, and database management. Motivated to contribute to solving real-world problems in a supportive work environment.",
+    "technical_skills": [
+      "Python",
+      "R",
+      "SQL",
+      "Java",
+      "Classification",
+      "Clustering",
+      "NLP",
+      "Deep Learning",
+      "Time Series",
+      "EDA",
+      "Predictive Modeling",
+      "Business Analysis",
+      "Power BI",
+      "Tableau",
+      "TensorFlow",
+      "Keras",
+      "PyTorch",
+      "Matplotlib",
+      "Web Design",
+      "Microsoft App"
+    ],
+    "work_experience": [],
+    "education": [
+      {
+        "degree": "Bachelor of Data Science",
+        "field": "AI Path",
+        "institution": "Saudi Electronic University",
+        "location": null,
+        "graduation_year": "2025",
+        "gpa": null,
+        "honors": null
+      }
+    ],
+    "projects": [
+      {
+        "name": "BASEERA PLATFORM FOR ACADEMIC ADVISING",
+        "description": "Built an AI-based platform for academic advising by designing the interface and managing the database to personalize student support.",
+        "technologies": [],
+        "role": "Senior Project",
+        "link": null
+      },
+      {
+        "name": "AI IMPACT ON FINANCE SECTOR – DATA VISUALIZATION DASHBOARD",
+        "description": "Created a Power BI dashboard to analyze AI’s influence on finance sector roles, skills, and automation trends.",
+        "technologies": [],
+        "role": null,
+        "link": null
+      },
+      {
+        "name": "ANALYZING HEART HEALTH FACTORS AND PREDICTING DISEASE RISK",
+        "description": "Led a data analysis project using health and demographic data to identify risk factors and build predictive models.",
+        "technologies": [],
+        "role": null,
+        "link": null
+      },
+      {
+        "name": "PERSONAL FINANCE MANAGER (PFM) PROJECT",
+        "description": "Developed a personal budgeting tool to track income, expenses, and categorize transactions.",
+        "technologies": [],
+        "role": null,
+        "link": null
+      },
+      {
+        "name": "CUSTOMER BEHAVIOR ANALYSIS FOR IMPROVING BANKING MARKETING CAMPAIGNS",
+        "description": "Conducted customer behavior analysis and evaluated marketing campaigns to provide improvement recommendations.",
+        "technologies": [],
+        "role": null,
+        "link": null
+      }
+    ],
     "certifications": [],
-    "languages": [],
+    "languages": [
+      {
+        "language": "Arabic",
+        "proficiency": null
+      },
+      {
+        "language": "English",
+        "proficiency": null
+      }
+    ],
     "years_experience": null,
-    "soft_skills": null,
+    "soft_skills": [
+      "Communication",
+      "Teamwork",
+      "Problem solving",
+      "Time management",
+      "Leadership",
+      "Adaptability"
+    ],
     "interests": null,
-    "filename": "Resume CV.pdf",
-    "extraction_timestamp": "2025-10-07T01:31:30.493175",
+    "filename": "Aljwharah Almousa cv RUH(4).pdf",
+    "extraction_timestamp": "2025-10-07T20:01:50.548317",
     "extraction_method": "OpenAI Vision (gpt-4o)",
     "total_pages": 1
   }
