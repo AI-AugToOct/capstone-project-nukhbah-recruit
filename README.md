@@ -1,7 +1,8 @@
-<h1 align="left">
-  <img src="./logo.jpeg" alt="Nukhbah Recruit Logo" width="50" style="vertical-align: middle; margin-right: 10px;">
-  Nukhbah Recruit
-</h1>
+<p align="left">
+  <img src="./logo.jpeg" alt="Nukhbah Recruit Logo" width="55" style="float:left; margin-right:10px;"/>
+  <h1 style="display:inline;">Nukhbah Recruit</h1>
+</p>
+
 
 **AI-Powered Recruitment Platform for Smarter Hiring Decisions**
 
@@ -35,10 +36,13 @@ Our main focus areas include:
 
 ---
 
-## 🧩 Workflow  
+## 🧩 Nukhbah Recruit System Workflow  
 
 Below is the end-to-end workflow of **Nukhbah Recruit**, showing how job descriptions and candidate CVs flow through the system to produce ranked results.
 
-![Nukhbah Recruit System Workflow](./system_workflow.png)
+<p align="center">
+  <img src="./system_workflow.png" alt="Nukhbah Recruit System Workflow" width="750"/>
+</p>
+
 
 
