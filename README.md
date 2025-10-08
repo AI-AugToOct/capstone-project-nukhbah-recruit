@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="./src/static/nukhbah.jpg" alt="Nukhbah Recruit Logo" width="55" style="float:left; margin-right:10px;"/>
+  <img src="./src/static/nukhbah.jpg" alt="Nukhbah Recruit Logo" width="100" style="float:left; margin-right:10px;"/>
   <h1 style="display:inline;">Nukhbah Recruit</h1>
 </p>
 
