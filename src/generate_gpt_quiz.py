@@ -7,6 +7,8 @@ import pandas as pd
 
 gpt_client = get_gpt_client()
 def gpt_quiz(job_description: str, sector: str, job_field: str, data_path: str = None):
+    print("DEBUG")
+    print(data_path)
     formatted_prompt = None
 
     if job_field == "Fullstack Developer":
@@ -21,7 +23,9 @@ def gpt_quiz(job_description: str, sector: str, job_field: str, data_path: str =
         formatted_prompt = copy.deepcopy(GPT_PROMPT["software_engineering"])
     else:
         raise ValueError(f"Unsupported job field: {job_field}")
-
+     
+    
+    print('hi2')
     data_context = ""
     if job_field == "ai engineering":
         if data_path is None:
@@ -31,6 +35,7 @@ def gpt_quiz(job_description: str, sector: str, job_field: str, data_path: str =
             f"Columns: {list(df.columns)}\n\n"
             f"Sample rows:\n{df.head(5).to_string(index=False)}"
         )
+        print("hi")
         formatted_prompt[1]["content"] = formatted_prompt[1]["content"].format(
             description=job_description, sector=sector, dataset=data_context
         )

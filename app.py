@@ -8,6 +8,7 @@ from src.candidate_matching import match_candidates
 from main import process_candidate_cv
 from main import process_company
 from src.evaluate_quiz import evaluate_answer
+from src.generate_gpt_quiz import gpt_quiz
 import json
 from pathlib import Path
 from typing import Optional, List
@@ -92,6 +93,22 @@ footer {position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); 
 function singleCheck(box) {
     const checkboxes = document.querySelectorAll('input[name="role"]');
     checkboxes.forEach(c => { if(c!==box) c.checked=false; });
+    toggleDatasetField(box);
+}
+
+// JS for showing dataset field for specific roles
+function toggleDatasetField(box){
+    const datasetDiv = document.getElementById('ai-dataset');
+    if(box.checked && (box.value === "AI Engineer" || box.value === "Cyber Security")){
+        datasetDiv.style.display = 'block';
+    } else {
+        const checkedBoxes = document.querySelectorAll('input[name="role"]:checked');
+        let show = false;
+        checkedBoxes.forEach(cb => {
+            if(cb.value === "AI Engineer" || cb.value === "Cyber Security") show = true;
+        });
+        datasetDiv.style.display = show ? 'block' : 'none';
+    }
 }
 
 // JS for company page tabs
@@ -348,7 +365,6 @@ def company_form(error: Optional[str] = None):
 
 @app.post("/company/submit", response_class=HTMLResponse)
 async def company_submit(
-    request: Request,
     company_name: str = Form(...),
     sector: str = Form(...),
     role: Optional[List[str]] = Form(None),
@@ -361,34 +377,43 @@ async def company_submit(
     role_val = selected[0]
 
     dataset_path_str = None
-    if role_val == "AI Engineer" and dataset_csv and dataset_csv.filename:
-        try:
-            saved_ds = _save_upload(dataset_csv, UPLOADS_DIR)
-            dataset_path_str = str(saved_ds)
-            logger.info("Saved dataset CSV to %s", saved_ds)
-        except Exception as e:
-            logger.exception("Failed saving dataset CSV")
-            return HTMLResponse(f"<h3>Failed to save dataset CSV: {e}</h3>", status_code=500)
+    # Dataset required only for AI Engineer or Cyber Security
+    if role_val in ["AI Engineer", "Cyber Security"]:
+        if dataset_csv and dataset_csv.filename:
+            try:
+              
+                upload_folder = UPLOADS_DIR
+                upload_folder.mkdir(parents=True, exist_ok=True)
+                saved_path = upload_folder / dataset_csv.filename
+                with saved_path.open("wb") as buffer:
+                    shutil.copyfileobj(dataset_csv.file, buffer)
+                dataset_path_str = str(saved_path)
+                logger.info("Saved dataset CSV to %s", dataset_path_str)
+            except Exception as e:
+                logger.exception("Failed saving dataset CSV")
+                return HTMLResponse(f"<h3>Failed to save dataset CSV: {e}</h3>", status_code=500)
+        else:
+            return company_form(error="Dataset CSV is required for this role.")
 
-    try:
-        cv_list = getattr(app.state, "last_cv_files", None)
-        process_company(
-            job_description=job_description,
-            sector=sector,
-            job_field=role_val,
-            data_path=dataset_path_str
-        )
-        logger.info("Pipeline main() invoked successfully")
-    except Exception as e:
-        logger.exception("pipeline_main failed")
-        pass
+    # Generate GPT quiz
+    #try:
+    quiz_content = gpt_quiz(
+          job_description=job_description,
+          sector=sector,
+          job_field=role_val,
+          data_path= UPLOADS_DIR / "data.csv"  #
+    )
+    logger.info("GPT quiz generated successfully")
+    #except Exception as e:
+    logger.info("Failed generating GPT quiz")
+    return HTMLResponse(f"<h3>Error generating quiz: {e}</h3>", status_code=500)
 
     return f"""
     <!doctype html>
     <html>
     <head><meta charset="utf-8"><title>Received</title>{BASE_STYLE}</head>
     <body>
-      <img src="/static/nukhbah.png" alt="Logo" class="logo">
+      {navbar_html()}
       <div class="wrap">
         <div class="card">
           <h1>Submission received</h1>
@@ -399,6 +424,7 @@ async def company_submit(
             <div><label>Role</label><div>{role_val}</div></div>
             <div><label>Job Description</label><div><pre style="white-space:pre-wrap">{job_description}</pre></div></div>
             {"<div><label>Dataset</label><div>"+dataset_csv.filename+"</div></div>" if dataset_path_str else ""}
+            <div><label>Generated Quiz</label><pre class="code-output">{quiz_content}</pre></div>
           </div>
           <div class="spacer"></div>
           <div class="row">

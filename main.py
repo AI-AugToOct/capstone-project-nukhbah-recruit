@@ -63,7 +63,7 @@ def process_company(job_description: str, sector: str, job_field: str,data_path:
     
     cvs_data = []
     all_cvs_file = Path("Json/all_extracted_cvs.json")
-    all_cvs_file.parent.mkdir(parents=True, exist_ok=True)\
+    all_cvs_file.parent.mkdir(parents=True, exist_ok=True)
         
     with open(all_cvs_file, "r", encoding="utf-8") as f:
         cvs_data_dict = json.load(f)
@@ -103,6 +103,7 @@ def process_company(job_description: str, sector: str, job_field: str,data_path:
     
     # 4: Generate quiz for a job description and sector
     print("start generate quiz")
+    
     logger.info("Generating quiz for feild: %s in sector: %s", job_field, sector)
     generated_quiz = gpt_quiz(job_description, sector, job_field, data_path)
     with open("Json/generated_quiz.json", "w", encoding="utf-8") as f:
@@ -176,11 +177,3 @@ def process_company(job_description: str, sector: str, job_field: str,data_path:
 #        qualified_candidates = []
 #        logger.warning("No CVs to match. Skipping candidate matching.")
 
-
-
-if __name__ == "__main__":
-    main(
-        job_description="Write a function to train a simple linear regression model using scikit-learn.",
-        sector="software_engineer",
-        job_field="software engineering"
-    )
