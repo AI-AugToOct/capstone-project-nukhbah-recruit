@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="/static/nukhbah.jpg" alt="Nukhbah Recruit Logo" width="55" style="float:left; margin-right:10px;"/>
+  <img src="./src/static/nukhbah.jpg" alt="Nukhbah Recruit Logo" width="55" style="float:left; margin-right:10px;"/>
   <h1 style="display:inline;">Nukhbah Recruit</h1>
 </p>
 
@@ -41,7 +41,7 @@ Our main focus areas include:
 Below is the end-to-end workflow of **Nukhbah Recruit**, showing how job descriptions and candidate CVs flow through the system to produce ranked results.
 
 <p align="left">
-  <img src="./static/nukhbah_system_workflow.png" alt="Nukhbah Recruit System Workflow" width="400"/>
+  <img src="./src/static/nukhbah_system_workflow.png" alt="Nukhbah Recruit System Workflow" width="400"/>
 </p>
 
 
