@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="./logo.jpeg" alt="Nukhbah Recruit Logo" width="55" style="float:left; margin-right:10px;"/>
+  <img src="/static/nukhbah.jpg" alt="Nukhbah Recruit Logo" width="55" style="float:left; margin-right:10px;"/>
   <h1 style="display:inline;">Nukhbah Recruit</h1>
 </p>
 
@@ -41,8 +41,47 @@ Our main focus areas include:
 Below is the end-to-end workflow of **Nukhbah Recruit**, showing how job descriptions and candidate CVs flow through the system to produce ranked results.
 
 <p align="left">
-  <img src="./system_workflow.png" alt="Nukhbah Recruit System Workflow" width="400"/>
+  <img src="./static/nukhbah_system_workflow.png" alt="Nukhbah Recruit System Workflow" width="400"/>
 </p>
 
 
+## Project Structure 
 
+```bash
+nukhbah-recruit/
+│
+├── candidate_answers_input/         #Candidate quiz submissions grouped by job field
+│   ├── ai_engineer/
+│   ├── cloud_engineer/
+│   ├── cyber_security/
+│   └── software_engineer/
+│
+├── cv_extraction_output/            # Extracted data from uploaded CVs
+│   ├── raw_text/
+│   ├── structured_json/
+│   └── all_extracted_cvs.json
+│
+├── prompt_testing_data/             # Sample data for testing job fields that require data input
+├── src/                             # Main source code for model, quiz, and evaluation
+│   ├── app.py                       # FastAPI application
+│   ├── candidate_answers.py         # Handles candidate responses
+│   ├── candidate_matching.py        # Matching logic using embeddings
+│   ├── cv_extractor.py              # CV parsing and text preprocessing
+│   ├── generate_gpt_quiz.py         # Quiz generation using LLM
+│   ├── evaluate_quiz.py             # Quiz evaluation
+│   ├── evaluataion_config.py        # Evaluation configuration
+│   ├── evaluation_criteria.py       # Candidates scoring and evaluation criteria
+│   ├── job_desc_samples.py          # Sample job descriptions for testing
+│   ├── prompts.json                 # Base prompts used for quiz generation
+│   └── test_evaluation.py           # Unit tests for quiz evaluation
+│
+├── infra/                           # Infrastructure setup
+│
+├── static/                          # Static assets (Nukhbah Recruit logo, Workflow diagram)
+│
+│
+├── main.py                          # Main entry point to run the pipeline
+├── config.py                        # Configuration file for environment variables
+├── requirements.txt                 # Python dependencies
+├── Dockerfile                       # Docker setup for the FastAPI app
+└── README.md                        # Project documentation
