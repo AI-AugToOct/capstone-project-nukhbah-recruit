@@ -65,17 +65,15 @@ def process_company(job_description: str, sector: str, job_field: str,data_path:
     all_cvs_file = Path("Json/all_extracted_cvs.json")
     all_cvs_file.parent.mkdir(parents=True, exist_ok=True)\
         
-    if all_cvs_file.exists():
-        with open(all_cvs_file, "r", encoding="utf-8") as f:
-            cvs_data = json.load(f)
-    else:
-        logger.error("CV data file not found at %s", {all_cvs_file})
-        return
+    with open(all_cvs_file, "r", encoding="utf-8") as f:
+        cvs_data_dict = json.load(f)
+        
+    cvs_data = list(cvs_data_dict.values()) 
 
     # 2: Match candidates to job description
     print ("start match candidatec")
     qualified_candidates = match_candidates(
-        cvs_data=list(all_cvs_file.values()),
+        cvs_data=cvs_data,
         job_description=job_description,
         job_field=job_field,
         output_path="Json/qualified_candidates.json"
