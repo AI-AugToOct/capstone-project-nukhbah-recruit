@@ -37,21 +37,18 @@ def send_to_n8n(candidates_list):
             logger.warning(f"n8n response: {response.text}")
     except Exception as e:
         logger.error(f"Error connecting to n8n: {e}")
-
-
-def main(job_description: str, sector: str, job_field: str,cv_files=None, data_path: str = None):
-    all_cvs_file = Path("Json/all_extracted_cvs.json")
-    all_cvs_file.parent.mkdir(parents=True, exist_ok=True)
-
-    cvs_data = []
-
-
+        
+        
+def process_candidate_cv(cv_files=None,data_path: str = None):
+     cvs_data = []
+     all_cvs_file = Path("Json/all_extracted_cvs.json")
+     all_cvs_file.parent.mkdir(parents=True, exist_ok=True)
     # 1: Extract CVs 
-    if cv_files:
+     if cv_files:
         logger.info("Extracting and merging CVs from files: %s", cv_files)
         all_cvs_data = extract_cvs(cv_files)
         logger.info("Total CVs after extraction and merge: %d", len(all_cvs_data))
-    else:
+     else:
         # Load existing CVs if no new files provided
         if all_cvs_file.exists():
             with open(all_cvs_file, 'r', encoding='utf-8') as f:
@@ -61,10 +58,24 @@ def main(job_description: str, sector: str, job_field: str,cv_files=None, data_p
             all_cvs_data = {}
             logger.warning("No CV files provided and no existing CVs found.")
 
+
+def process_company(job_description: str, sector: str, job_field: str,data_path: str = None):
+    
+    cvs_data = []
+    all_cvs_file = Path("Json/all_extracted_cvs.json")
+    all_cvs_file.parent.mkdir(parents=True, exist_ok=True)\
+        
+    if all_cvs_file.exists():
+        with open(all_cvs_file, "r", encoding="utf-8") as f:
+            cvs_data = json.load(f)
+    else:
+        logger.error("CV data file not found at %s", {all_cvs_file})
+        return
+
     # 2: Match candidates to job description
     print ("start match candidatec")
     qualified_candidates = match_candidates(
-        cvs_data=list(all_cvs_data.values()),
+        cvs_data=list(all_cvs_file.values()),
         job_description=job_description,
         job_field=job_field,
         output_path="Json/qualified_candidates.json"
@@ -74,6 +85,7 @@ def main(job_description: str, sector: str, job_field: str,cv_files=None, data_p
     # Save qualified candidates JSON for later stages
     with open("Json/qualified_candidates.json", "w", encoding="utf-8") as f:
         json.dump(qualified_candidates, f, ensure_ascii=False, indent=4)
+        
     print ("finish match candidates")
     
     # 3:Send qualified candidates to n8n

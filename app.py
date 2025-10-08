@@ -3,8 +3,10 @@ from fastapi import FastAPI, UploadFile, Form, Request, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from src.candidate_matching import match_candidates
-from main import extract_cvs as pipeline_extract_cvs
-from main import main as pipeline_main
+#from main import extract_cvs as pipeline_extract_cvs
+#from main import main as pipeline_main
+from main import process_candidate_cv
+from main import process_company
 from src.evaluate_quiz import evaluate_answer
 import json
 from pathlib import Path
@@ -262,7 +264,7 @@ async def individual_submit(resume: UploadFile):
         logger.exception("Failed saving upload")
         return HTMLResponse(f"<h3>Failed to save file: {e}</h3>", status_code=500)
     try:
-        cv_json_path = pipeline_extract_cvs([str(saved_path)])
+        cv_json_path = process_candidate_cv([str(saved_path)])
         logger.info("CV extraction invoked successfully -> %s", cv_json_path)
     except Exception:
         pass
@@ -370,11 +372,10 @@ async def company_submit(
 
     try:
         cv_list = getattr(app.state, "last_cv_files", None)
-        pipeline_main(
+        process_company(
             job_description=job_description,
             sector=sector,
             job_field=role_val,
-            cv_files=cv_list,
             data_path=dataset_path_str
         )
         logger.info("Pipeline main() invoked successfully")
