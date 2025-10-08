@@ -10,7 +10,7 @@ fitz
 pdfminer.six
 pytesseract
 Pillow
-
+PyMuPDF
 python-dotenv
 pathlib
 requests
