@@ -41,7 +41,7 @@ Our main focus areas include:
 Below is the end-to-end workflow of **Nukhbah Recruit**, showing how job descriptions and candidate CVs flow through the system to produce ranked results.
 
 <p align="left">
-  <img src="./src/static/nukhbah_system_workflow.png" alt="Nukhbah Recruit System Workflow" width="650"/>
+  <img src="./src/static/nukhbah_system_workflow.png" alt="Nukhbah Recruit System Workflow" width="750"/>
 </p>
 
 
