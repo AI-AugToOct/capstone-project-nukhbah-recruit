@@ -1,7 +1,7 @@
 import json
 import copy
 from src.infra.gpt_client import get_gpt_client
-from src.config import GPT_PROMPT, GPT_MODEL, GPT_TEMPERATURE
+from src.config.config import GPT_PROMPT, GPT_MODEL, GPT_TEMPERATURE
 import pandas as pd
 
 

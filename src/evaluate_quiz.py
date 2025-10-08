@@ -1,7 +1,7 @@
 import json
 from src.infra.gpt_client import get_gpt_client
 from src.evaluation_criteria import EvaluationCriteria
-from src.evaluation_config import EVALUATION_PROMPT
+from src.config.evaluation_config import EVALUATION_PROMPT
 
 gpt_client = get_gpt_client()
 

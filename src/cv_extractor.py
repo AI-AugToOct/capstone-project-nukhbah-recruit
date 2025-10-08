@@ -7,7 +7,7 @@ Uses OpenAI Vision API with secure configuration from .env file
 """
 
 import base64
-from src.config2 import Config
+from src.config.config2 import Config
 import json
 from pathlib import Path
 from datetime import datetime
@@ -422,7 +422,7 @@ def extract_cvs(cv_files: list) -> Dict:
     new_cvs_dict = {cv.get('filename'): cv for cv in extracted_cvs}
 
     # Load existing CVs if any
-    all_cvs_file = config.output_dir / "all_extracted_cvs.json"
+    all_cvs_file =  "Json/all_extracted_cvs.json"
     if all_cvs_file.exists():
         with open(all_cvs_file, 'r', encoding='utf-8') as f:
             all_cvs = json.load(f)

@@ -2,7 +2,7 @@
 
 import json
 from sentence_transformers import SentenceTransformer, util
-from src.config_candidate import SIMILARITY_THRESHOLD, CHUNK_SIZE, OVERLAP
+from src.config.config_candidate import SIMILARITY_THRESHOLD, CHUNK_SIZE, OVERLAP
 
 #  Load model once globally 
 model = SentenceTransformer("lwolfrum2/careerbert-jg")

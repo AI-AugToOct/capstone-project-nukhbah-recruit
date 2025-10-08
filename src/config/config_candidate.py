@@ -1,4 +1,4 @@
-# src/config_candidate.py
+# confug/config_candidate.py
 
 import configparser
 import os

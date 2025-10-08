@@ -1,5 +1,5 @@
 from openai import OpenAI
-from src.config import GPT_API_KEY
+from src.config.config import GPT_API_KEY
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

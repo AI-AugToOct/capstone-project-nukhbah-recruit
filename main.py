@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from config import Config
+from src.config.config1 import Config
 from src.cv_extractor import CVExtractor
 from src.cv_extractor import extract_cvs
 from src.generate_gpt_quiz import gpt_quiz
@@ -11,13 +11,14 @@ from src.evaluate_quiz import evaluate_answer
 # from src.cv_extractor import extract_cvs
 from src.cv_extractor import CVExtractor
 from openai import OpenAI
+import requests
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-import requests
 
 config = Config('.env')
 
-# Your n8n webhook URL
+#  n8n webhook URL
 N8N_WEBHOOK_URL = "https://mansoralshamran.app.n8n.cloud/webhook-test/aafe3615-630a-4dc9-8faf-f93e4abb6248"
 
 def send_to_n8n(candidates_list):
@@ -39,13 +40,13 @@ def send_to_n8n(candidates_list):
 
 
 def main(job_description: str, sector: str, job_field: str,cv_files=None, data_path: str = None):
-    all_cvs_file = Path("cv_extraction_output/all_extracted_cvs.json")
+    all_cvs_file = Path("Json/all_extracted_cvs.json")
     all_cvs_file.parent.mkdir(parents=True, exist_ok=True)
 
     cvs_data = []
 
 
-    # 1️⃣ Extract CVs and merge automatically with existing ones
+    # 1: Extract CVs 
     if cv_files:
         logger.info("Extracting and merging CVs from files: %s", cv_files)
         all_cvs_data = extract_cvs(cv_files)
@@ -60,20 +61,23 @@ def main(job_description: str, sector: str, job_field: str,cv_files=None, data_p
             all_cvs_data = {}
             logger.warning("No CV files provided and no existing CVs found.")
 
-    # Match candidates to job description
+    # 2: Match candidates to job description
+    print ("start match candidatec")
     qualified_candidates = match_candidates(
         cvs_data=list(all_cvs_data.values()),
         job_description=job_description,
         job_field=job_field,
-        output_path="qualified_candidates.json"
+        output_path="Json/qualified_candidates.json"
     )
     logger.info("Total qualified candidates: %d", len(qualified_candidates))
 
     # Save qualified candidates JSON for later stages
-    with open("qualified_candidates.json", "w", encoding="utf-8") as f:
+    with open("Json/qualified_candidates.json", "w", encoding="utf-8") as f:
         json.dump(qualified_candidates, f, ensure_ascii=False, indent=4)
+    print ("finish match candidates")
     
-    # Send qualified candidates to n8n
+    # 3:Send qualified candidates to n8n
+    print ("send email to candidates")
     if qualified_candidates:
         n8n_candidates = [
             {
@@ -85,10 +89,13 @@ def main(job_description: str, sector: str, job_field: str,cv_files=None, data_p
     else:
         logger.info("No qualified candidates to send to n8n.")
 
+    print(" finish send")
+    
     # 4: Generate quiz for a job description and sector
+    print("start generate quiz")
     logger.info("Generating quiz for feild: %s in sector: %s", job_field, sector)
     generated_quiz = gpt_quiz(job_description, sector, job_field, data_path)
-    with open("generated_quiz.json", "w", encoding="utf-8") as f:
+    with open("Json/generated_quiz.json", "w", encoding="utf-8") as f:
       json.dump(generated_quiz, f, ensure_ascii=False, indent=4)
     logger.info("Quiz generated successfully.")
     print(generated_quiz)
@@ -101,15 +108,16 @@ def main(job_description: str, sector: str, job_field: str,cv_files=None, data_p
         model.fit(X_train, y_train)
         return model
     """
-
+    print ("finish generate quiz")
+    
     # 5: Evaluate applicant answers to the quiz
+    print ("start evaluate quiz")
     logger.info("Evaluating applicant answers for sector: %s", sector)
     evaluation_report = evaluate_answer(generated_quiz, sample_answer, job_field)
     logger.info("Evaluation completed successfully.")
     logger.info("Evaluation Summary:\n%s", evaluation_report)
     print(evaluation_report)
 
-    config = Config('.env')
     client = OpenAI(api_key=config.api_key)
     def get_gpt_answer(question):
         response = client.chat.completions.create(
@@ -117,7 +125,7 @@ def main(job_description: str, sector: str, job_field: str,cv_files=None, data_p
         messages=[{"role": "user", "content": f"Solve this question:\n{question}"}]
     )
         return response.choices[0].message.content
-    
+    print ("finish evalute quiz")
     # 6: Shortlist applicants based on quiz results
     shortlisted_candidates = []
     passing_score = 4.0  # معيار النجاح على مقياس 0-10
@@ -127,7 +135,7 @@ def main(job_description: str, sector: str, job_field: str,cv_files=None, data_p
     logger.info("Shortlisted %d candidates based on quiz results.", len(shortlisted_candidates))
 
     # Save shortlisted candidates
-    with open("shortlisted_candidates.json", "w", encoding="utf-8") as f:
+    with open("Json/shortlisted_candidates.json", "w", encoding="utf-8") as f:
         json.dump(shortlisted_candidates, f, ensure_ascii=False, indent=4)
 
 

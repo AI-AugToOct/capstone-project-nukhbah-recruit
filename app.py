@@ -14,8 +14,9 @@ import logging
 
 app = FastAPI(title="Recruitment MVP")
 
-STATIC_DIR = Path(__file__).parent / "static"
-UPLOADS_DIR = Path(__file__).parent / "uploads"
+STATIC_DIR = Path(__file__).parent / "src" / "static"
+UPLOADS_DIR = Path(__file__).parent / "src" / "uploads"
+
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -23,7 +24,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("app")
 
-# ---------- Shared CSS & JS ----------
+# CSS & JS 
 BASE_STYLE = """
 <style>
 :root {
@@ -441,7 +442,7 @@ def quiz_entry_form():
 @app.post("/quiz/start", response_class=HTMLResponse)
 async def quiz_start(full_name: str = Form(...), email: str = Form(...)):
     try:
-        with open("qualified_candidates.json", "r", encoding="utf-8") as f:
+        with open("Json/qualified_candidates.json", "r", encoding="utf-8") as f:
             candidates = json.load(f)
         exists = any(
             c.get("contact", {}).get("email", "").lower() == email.lower()
@@ -458,7 +459,7 @@ async def quiz_start(full_name: str = Form(...), email: str = Form(...)):
         )
 
     try:
-        with open("generated_quiz.json", "r", encoding="utf-8") as f:
+        with open("Json/generated_quiz.json", "r", encoding="utf-8") as f:
             quiz_data = json.load(f)
     except FileNotFoundError:
         return HTMLResponse("<h3>No quiz available. Please try again later.</h3>", status_code=404)
@@ -472,7 +473,16 @@ async def quiz_start(full_name: str = Form(...), email: str = Form(...)):
         <div class="card">
           <h1>Quiz</h1>
           <p class="lead">Please read the question below and submit your code solution.</p>
-          <pre style="background:#111827; padding:12px; border-radius:12px;">{quiz_text}</pre>
+          <pre style="
+              background:#111827; 
+              padding:12px; 
+              border-radius:12px; 
+              color:white;
+              white-space: pre-wrap; 
+              word-wrap: break-word; 
+              overflow-x: auto;
+              max-width: 100%;
+          ">{quiz_text}</pre>
           <form class="grid" action="/quiz/submit" method="post">
             <input type="hidden" name="full_name" value="{full_name}">
             <input type="hidden" name="email" value="{email}">
@@ -491,7 +501,7 @@ async def quiz_start(full_name: str = Form(...), email: str = Form(...)):
 @app.post("/quiz/submit", response_class=HTMLResponse)
 async def quiz_submit(full_name: str = Form(...), email: str = Form(...), answer: str = Form(...)):
     try:
-        with open("generated_quiz.json", "r", encoding="utf-8") as f:
+        with open("Json/generated_quiz.json", "r", encoding="utf-8") as f:
             quiz_data = json.load(f)
         sector = "software_engineer"
         result = evaluate_answer(quiz_data, answer, sector)
@@ -505,7 +515,7 @@ async def quiz_submit(full_name: str = Form(...), email: str = Form(...), answer
         <div class="card center">
           <h1>Submission received</h1>
           <p class="lead">Thank you <b>{full_name}</b>, your quiz answer has been evaluated.</p>
-          <pre class="code-output">{json.dumps(result, indent=4, ensure_ascii=False)}</pre>
+          <pre class="code-output ">{json.dumps(result, indent=4, ensure_ascii=False)}</pre>
           <div class="row" style="justify-content:center">
             <a class="btn" href="/">Home</a>
           </div>
