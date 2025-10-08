@@ -1,0 +1,13 @@
+import re
+
+def detect_sql_injection(log_entry):
+    sql_patterns = [
+        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",
+        r"((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))",
+        r"\w*((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))"
+    ]
+    
+    for pattern in sql_patterns:
+        if re.search(pattern, log_entry, re.IGNORECASE):
+            return True
+    return False

@@ -13,7 +13,8 @@ from src.job_desc_samples import (
 from src.candidate_matching import match_candidates
 from src.evaluate_quiz import evaluate_answer
 from openai import OpenAI
-
+from collect_candidate_answers import collect_answers_for_job
+from evaluate_all_candidates import evaluate_all_candidates_from_json  
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -86,20 +87,35 @@ def main(job_description: str, sector: str, job_field: str, cv_files: list = Non
     else:
         get_gpt_answer(str(generated_quiz))
 
-    # Step 5: Evaluate Sample Answer
-    sample_answer = """
-from sklearn.linear_model import LinearRegression
+#     # Step 5: Evaluate Sample Answer
+#     collect_answers_for_job(
+#     job_field="software_engineer",
+#     job_description="Senior Software Engineer role",
+#     question="Write a function to train a linear regression model",
+#     answers_dir="candidate_answers_input/software_engineer"
+# )
+#     logger.info("Evaluating applicant answers for sector: %s", sector)
+#     evaluation_report = evaluate_answer(generated_quiz, collect_answers_for_job, sector)
+#     logger.info("Evaluation completed successfully.")
+#     print(evaluation_report)
 
-def train_model(X_train, y_train):
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    return model
-"""
-    logger.info("Evaluating applicant answers for sector: %s", sector)
-    evaluation_report = evaluate_answer(generated_quiz, sample_answer, sector)
+    # Step 5: Collect Candidate Answers
+    logger.info("Collecting candidate answers for %s...", job_field)
+    collect_answers_for_job(
+        job_field=sector,  # Use sector as job_field
+        job_description=job_description,
+        question=generated_quiz,  # Use the generated quiz question
+        answers_dir=f"candidate_answers_input/{sector}"
+    )
+    logger.info("Candidate answers collected successfully.")
+    
+    # Step 6: Evaluate All Candidates
+    logger.info("Evaluating all candidates...")
+    evaluation_results = evaluate_all_candidates_from_json(
+        master_file="all_candidates_answers.json",
+        output_file="evaluation_results.json"
+    )
     logger.info("Evaluation completed successfully.")
-    print(evaluation_report)
-
 
 # Entry Point
 if __name__ == "__main__":

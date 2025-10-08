@@ -4,8 +4,8 @@ from fastapi import FastAPI, UploadFile, Form, Request, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from src.candidate_matching import match_candidates
-from main import extract_cvs as pipeline_extract_cvs
-from main import main as pipeline_main
+from cv_extractor import extract_cvs as pipeline_extract_cvs
+from main import main as pipeline_mainextract_cvs
 
 from pathlib import Path
 from typing import Optional, List
