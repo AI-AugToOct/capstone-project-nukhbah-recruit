@@ -45,7 +45,7 @@ Below is the end-to-end workflow of **Nukhbah Recruit**, showing how job descrip
 </p>
 
 
-## Project Structure 
+## 🗂️ Project Structure 
 
 ```bash
 nukhbah-recruit/
@@ -85,3 +85,52 @@ nukhbah-recruit/
 ├── requirements.txt                 # Python dependencies
 ├── Dockerfile                       # Docker setup for the FastAPI app
 └── README.md                        # Project documentation
+```
+
+
+---
+
+## 🚀 Getting Started
+
+You can run **Nukhbah Recruit** in two ways — using **Docker** or directly with **FastAPI**.
+
+---
+
+### 🐳 Run with Docker
+
+1️⃣ **Build the Docker image**
+docker build -t nukhbah-recruit .
+
+2️⃣ **Run the container**
+docker run -p 8080:8080 nukhbah-recruit
+
+> The app will be available at http://localhost:8080
+
+---
+
+### ⚙️ Run Directly with FastAPI
+
+1️⃣ **Install dependencies**
+pip install -r requirements.txt
+
+2️⃣ **Start the FastAPI application**
+uvicorn src.app:app --host 0.0.0.0 --port 8080 --reload
+
+> Then open http://localhost:8080 in your browser.
+
+---
+
+### 🧠 Note
+- You can modify environment variables in `config.py` as needed for API keys or models.
+
+
+---
+
+## 👥 Team Members
+
+- **Aljwharah Almousa** — CV Data Extraction  
+- **Sarah Alowjan** — Candidate Matching · User Interface  
+- **Farah Alhanaya** — Quiz Generation & Prompt Engineering · Docker Setup  
+- **Joud Bin Jibreen** — Quiz Evaluation · Evaluation Criteria Design  
+- **Mansor Alshamran** — FastAPI Development · Email Sending Agent
+
